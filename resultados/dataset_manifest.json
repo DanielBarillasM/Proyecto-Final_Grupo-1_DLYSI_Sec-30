@@ -1,0 +1,31 @@
+{
+  "generated_at": "2026-10-17",
+  "generator": "OpenAI Codex + plantillas deterministas revisables",
+  "seed": 2026,
+  "mysql_target": "8.4.10",
+  "mysql_validation_complete": true,
+  "training_candidates": 2592,
+  "training_accepted": 2592,
+  "training_schemas": 12,
+  "validation_examples": 40,
+  "validation_schemas": 2,
+  "difficulty_validation": {
+    "facil": 14,
+    "media": 14,
+    "dificil": 12
+  },
+  "training_sha256": "9e28bcd7079dd7b2d41ca305b5f792055e78f3ecfdba455be1981295100049a8",
+  "validation_sha256": "e1af4f01758e094568aa22735b493066975346e9e6a087a90921692e19a472a9",
+  "human_review_complete": true,
+  "mysql_version": "8.4.10",
+  "sql_mode": "ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION",
+  "training_discarded": 0,
+  "accepted_sha256": "4ec6463b6018b58d22cc54f8327bc472712b3c4ff2378e1f9ceb15486d1e2612",
+  "assisted_review_complete": true,
+  "assisted_review_rows": 100,
+  "human_review_rows": 100,
+  "human_review_attestation": "revisión humana confirmada por el equipo el 2026-10-24",
+  "mysql_validated_at": "2026-10-25T08:33:41.471624+00:00",
+  "validation_accepted": 40,
+  "validation_discarded": 0
+}

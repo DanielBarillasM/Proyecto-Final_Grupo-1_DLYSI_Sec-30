@@ -1,0 +1,38 @@
+{
+  "status": "human_review_complete",
+  "rows_reviewed": 100,
+  "exact_source_matches": 100,
+  "read_only_parseable": 100,
+  "mysql_reference_validation": "inherited_from_dataset_manifest",
+  "assignments": {
+    "Pablo Daniel Barillas Moreno": 50,
+    "Wilson Alejandro Calderón Argueta": 50
+  },
+  "difficulty": {
+    "dificil": 16,
+    "facil": 39,
+    "media": 45
+  },
+  "schemas": {
+    "biblioteca_es": 2,
+    "cine_es": 7,
+    "clinica_es": 8,
+    "gimnasio_es": 12,
+    "hotel_en": 7,
+    "logistica_es": 8,
+    "municipio_es": 9,
+    "restaurante_es": 6,
+    "retail_en": 7,
+    "seguros_es": 12,
+    "telecom_en": 16,
+    "universidad_es": 6
+  },
+  "decision_written": "aprobado_revision_humana",
+  "human_review_complete": true,
+  "limitation": null,
+  "human_confirmed_rows": 100,
+  "decision_counts": {
+    "aprobado_revision_humana": 100
+  },
+  "attestation": "revisión humana confirmada por el equipo el 2026-10-24"
+}

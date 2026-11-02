@@ -1,0 +1,9 @@
+*.csv text eol=lf whitespace=-blank-at-eol
+*.jsonl text eol=lf
+*.ipynb text eol=lf whitespace=-blank-at-eol
+*.sql text eol=lf
+*.py text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.md text eol=lf
+adapter/*.safetensors filter=lfs diff=lfs merge=lfs -text

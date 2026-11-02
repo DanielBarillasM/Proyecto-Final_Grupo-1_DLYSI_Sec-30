@@ -1,0 +1,43 @@
+{
+  "status": "experiments_complete",
+  "dataset": {
+    "training_pairs": 2592,
+    "training_schemas": 12,
+    "validation_examples": 40,
+    "validation_schemas": 2,
+    "mysql_version": "8.4.10"
+  },
+  "experiments": {
+    "baseline": {
+      "weighted_ex": 0.038461538461538464,
+      "executable_rate": 0.625,
+      "latency_p95_ms": 6656.302299999879
+    },
+    "qlora_r16": {
+      "weighted_ex": 0.9743589743589743,
+      "executable_rate": 0.975,
+      "latency_p95_ms": 15718.663100000413,
+      "trainable_parameters": 18464768,
+      "training_minutes": 120.68245319499998
+    },
+    "qlora_r32": {
+      "weighted_ex": 0.9743589743589743,
+      "executable_rate": 0.975,
+      "latency_p95_ms": 13197.087399999873,
+      "trainable_parameters": 36929536,
+      "training_minutes": 133.42462429333332
+    },
+    "direct": {
+      "weighted_ex": 0.9743589743589743
+    },
+    "repair": {
+      "weighted_ex": 0.9743589743589743
+    }
+  },
+  "selected_adapter": "qlora_r32",
+  "selection_reason": "menor latencia p95 tras empate en EX y ejecutabilidad",
+  "hidden_ex_prediction": 0.874,
+  "hidden_ex_prediction_interval": [0.817, 0.9],
+  "hidden_ex_prediction_method": "Bootstrap determinista de 20,000 remuestras por pregunta con semilla 2026; al intervalo y al punto local se restan 0.10 por cambio de dominio.",
+  "note": "Métricas medidas localmente en RTX 4050 Laptop. La predicción oculta y su intervalo son estimaciones conservadoras por cambio de dominio; no son mediciones del conjunto oculto."
+}

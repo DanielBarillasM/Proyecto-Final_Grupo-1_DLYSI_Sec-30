@@ -1,0 +1,19 @@
+{
+  "name": "qlora_r32",
+  "adapter": "C:\\Users\\Daniel\\Desktop\\Proyecto-3_Deep\\artifacts_locales\\runs\\qlora_r32",
+  "repair": false,
+  "examples": 40,
+  "weighted_ex": 0.9743589743589743,
+  "ex_by_difficulty": {
+    "facil": 1.0,
+    "media": 0.9285714285714286,
+    "dificil": 1.0
+  },
+  "executable_rate": 0.975,
+  "latency_p50_ms": 7916.770300002099,
+  "latency_p95_ms": 13197.087399999873,
+  "error_counts": {
+    "correcto": 39,
+    "entidad_inexistente": 1
+  }
+}

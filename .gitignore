@@ -211,6 +211,15 @@ tempCodeRunnerFile.py
 # PyPI configuration file
 .pypirc
 
+# Proyecto final: dependencias, builds, telemetría y pesos recuperables
+node_modules/
+.next/
+*.tsbuildinfo
+logs/
+adapter/*.safetensors
+dist/
+tmp/
+
 # Marimo
 marimo/_static/
 marimo/_lsp/

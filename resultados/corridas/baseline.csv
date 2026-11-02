@@ -1,0 +1,235 @@
+﻿id,schema_id,dificultad,pregunta,sql_referencia,sql_predicho,error_generacion,ejecutable,correcto,categoria_error,latencia_ms
+aerolinea_val-0001,aerolinea_val,facil,"Lista hasta 2 pasajeros de Guatemala, ordenados por nombre. Escenario 1.",SELECT `passenger_name` FROM `passengers` WHERE `country` = 'Guatemala' ORDER BY `passenger_name` LIMIT 2;,"SELECT p.passenger_name
+FROM passengers p
+JOIN booking_flights bf ON p.passenger_id = bf.passenger_id
+JOIN flights f ON bf.flight_id = f.flight_id
+JOIN fare_classes fc ON f.fare_class_id = fc.fare_class_id
+WHERE p.country = 'Guatemala'
+GROUP BY p.passenger_id, p.passenger_name
+ORDER BY p.passenger_name
+LIMIT 2;",,False,False,entidad_inexistente,14220.35
+aerolinea_val-0002,aerolinea_val,facil,Muestra los vuelos con precio mayor a 23 y sus precios. Escenario 1.,"SELECT `flight_code`, `base_fare` FROM `flights` WHERE `base_fare` > 23 ORDER BY `base_fare` DESC;","SELECT f.flight_code, f.base_fare
+FROM flights f
+WHERE f.base_fare > 23
+GROUP BY f.flight_code, f.base_fare;",,True,False,agregacion,2160.35
+aerolinea_val-0003,aerolinea_val,facil,¿Cuántos reservas tienen estado confirmed? Variante 1. Escenario 1.,SELECT COUNT(*) AS total_bookings FROM `bookings` WHERE `status` = 'confirmed';,SELECT COUNT(*) FROM bookings WHERE status = 'confirmed';,,True,False,agregacion,786.68
+aerolinea_val-0004,aerolinea_val,facil,Lista los identificadores y fechas de reservas entre 2024-01-01 y 2024-01-28. Escenario 1.,"SELECT `booking_id`, `booking_date` FROM `bookings` WHERE `booking_date` BETWEEN '2024-01-01' AND '2024-01-28' ORDER BY `booking_date`;","SELECT booking_id, booking_date FROM bookings WHERE booking_date BETWEEN '2024-01-01' AND '2024-01-28';",,True,False,filtro,2313.5
+aerolinea_val-0005,aerolinea_val,facil,Indica el precio máximo de los vuelos por encima de 23. Escenario 1.,SELECT MAX(`base_fare`) AS precio_maximo FROM `flights` WHERE `base_fare` > 23;,"SELECT MAX(base_fare) AS max_price
+FROM flights
+WHERE base_fare > 23;",,True,False,resultado_distinto,1382.87
+aerolinea_val-0006,aerolinea_val,facil,Lista 2 categorías del catálogo en orden alfabético. Escenario 1.,SELECT `class_name` FROM `fare_classes` ORDER BY `class_name` LIMIT 2;,SELECT class_name FROM fare_classes ORDER BY class_name;,,True,False,resultado_distinto,733.89
+aerolinea_val-0007,aerolinea_val,facil,¿Cuál es el total promedio de los reservas con estado confirmed? Variante 1. Escenario 1.,"SELECT ROUND(AVG(`total_amount`), 2) AS promedio_total FROM `bookings` WHERE `status` = 'confirmed';","SELECT AVG(total_amount) AS average_total_amount
+FROM bookings
+WHERE status = 'confirmed';",,True,False,agregacion,1243.27
+aerolinea_val-0008,aerolinea_val,media,"Muestra cada pasajero y la cantidad de reservas con estado confirmed, incluyendo quienes no tienen. Escenario 1.","SELECT m.`passenger_name`, COUNT(e.`booking_id`) AS cantidad FROM `passengers` AS m LEFT JOIN `bookings` AS e ON e.`passenger_id` = m.`passenger_id` AND e.`status` = 'confirmed' GROUP BY m.`passenger_id`, m.`passenger_name` ORDER BY cantidad DESC;",,"ParseError: Invalid expression / Unexpected token. Line 6, Col: 4.
+   bookings b ON p.passenger_id = b.passenger_id
+WHERE b.status = 'confirmed'
+GROUP BY p.passenger_id
+[4mWITH[0m ONLY_FULL_GROUP_BY;",False,False,sintaxis,3187.66
+aerolinea_val-0009,aerolinea_val,media,Calcula el total de reservas por ubicación desde 2024-01-01 para estado confirmed. Escenario 1.,"SELECT m.`country`, ROUND(SUM(e.`total_amount`), 2) AS total FROM `passengers` AS m JOIN `bookings` AS e ON e.`passenger_id` = m.`passenger_id` WHERE e.`booking_date` >= '2024-01-01' AND e.`status` = 'confirmed' GROUP BY m.`country` ORDER BY total DESC;","SELECT p.country, COUNT(b.booking_id) AS total_reservations
+FROM passengers p
+JOIN bookings b ON p.passenger_id = b.passenger_id
+JOIN booking_flights bf ON b.booking_id = bf.booking_id
+JOIN flights f ON bf.flight_id = f.flight_id
+WHERE f.created_at >= '2024-01-01' AND b.status = 'confirmed'
+GROUP BY p.country
+HAVING COUNT(b.booking_id) > 0
+ORDER BY total_reservations DESC;",,False,False,entidad_inexistente,6005.01
+aerolinea_val-0010,aerolinea_val,media,Lista categorías con al menos 2 vuelos y su precio promedio. Escenario 1.,"SELECT g.`class_name`, COUNT(p.`flight_id`) AS cantidad, ROUND(AVG(p.`base_fare`), 2) AS promedio FROM `fare_classes` AS g JOIN `flights` AS p ON p.`fare_class_id` = g.`fare_class_id` GROUP BY g.`fare_class_id`, g.`class_name` HAVING COUNT(p.`flight_id`) >= 2 ORDER BY cantidad DESC;","SELECT fc.class_name, AVG(f.unit_fare) AS avg_unit_fare
+FROM fare_classes fc
+JOIN booking_flights bf ON fc.fare_class_id = bf.fare_class_id
+GROUP BY fc.class_name
+HAVING COUNT(*) >= 2;",,False,False,entidad_inexistente,3109.76
+aerolinea_val-0011,aerolinea_val,media,Muestra los vuelos y unidades registradas en reservas confirmed desde 2024-01-01. Escenario 1.,"SELECT p.`flight_code`, SUM(l.`seats`) AS unidades FROM `flights` AS p JOIN `booking_flights` AS l ON l.`flight_id` = p.`flight_id` JOIN `bookings` AS e ON e.`booking_id` = l.`booking_id` WHERE e.`status` = 'confirmed' AND e.`booking_date` >= '2024-01-01' GROUP BY p.`flight_id`, p.`flight_code` ORDER BY unidades DESC;","SELECT f.flight_code, b.seats
+FROM flights f
+JOIN booking_flights bf ON f.flight_id = bf.flight_id
+JOIN bookings b ON bf.booking_id = b.booking_id
+WHERE b.booking_date >= '2024-01-01' AND b.status = 'Confirmed';",,False,False,entidad_inexistente,3789.71
+aerolinea_val-0012,aerolinea_val,media,Encuentra pasajeros sin reservas posteriores a 2024-01-01. Escenario 1.,SELECT m.`passenger_name` FROM `passengers` AS m LEFT JOIN `bookings` AS e ON e.`passenger_id` = m.`passenger_id` AND e.`booking_date` > '2024-01-01' WHERE e.`booking_id` IS NULL ORDER BY m.`passenger_name`;,"SELECT p.passenger_name
+FROM passengers p
+WHERE p.passenger_id NOT IN (
+  SELECT b.passenger_id
+  FROM bookings b
+  WHERE b.booking_date > '2024-01-01'
+);",,True,True,correcto,2992.32
+aerolinea_val-0013,aerolinea_val,media,Resume cantidad y total de reservas por mes del año 2024. Escenario 1.,"SELECT MONTH(`booking_date`) AS mes, COUNT(*) AS cantidad, ROUND(SUM(`total_amount`), 2) AS total FROM `bookings` WHERE YEAR(`booking_date`) = 2024 GROUP BY MONTH(`booking_date`) ORDER BY mes;","SELECT 
+  DATE_FORMAT(b.booking_date, '%Y-%m') AS month,
+  COUNT(b.booking_id) AS total_reservations,
+  SUM(b.total_amount) AS total_amount
+FROM 
+  bookings b
+WHERE 
+  YEAR(b.booking_date) = 2024
+GROUP BY 
+  DATE_FORMAT(b.booking_date, '%Y-%m')
+ORDER BY 
+  month;",,True,False,agregacion,4507.02
+aerolinea_val-0014,aerolinea_val,media,Devuelve los 2 pasajeros con mayor promedio por reserva confirmed. Escenario 1.,"SELECT m.`passenger_name`, ROUND(AVG(e.`total_amount`), 2) AS promedio FROM `passengers` AS m JOIN `bookings` AS e ON e.`passenger_id` = m.`passenger_id` WHERE e.`status` = 'confirmed' GROUP BY m.`passenger_id`, m.`passenger_name` ORDER BY promedio DESC LIMIT 2;","SELECT p.passenger_name, AVG(b.total_amount) as avg_total_amount
+FROM passengers p
+JOIN bookings b ON p.passenger_id = b.passenger_id
+WHERE b.status = 'Confirmed'
+GROUP BY p.passenger_id
+ORDER BY avg_total_amount DESC
+LIMIT 2;",,True,False,agregacion,3407.34
+aerolinea_val-0015,aerolinea_val,dificil,Lista reservas cuyo total supera el promedio de su mismo estado confirmed desde 2024-01-01. Escenario 1.,"SELECT e.`booking_id`, e.`total_amount` FROM `bookings` AS e WHERE e.`status` = 'confirmed' AND e.`booking_date` >= '2024-01-01' AND e.`total_amount` > (SELECT AVG(e2.`total_amount`) FROM `bookings` AS e2 WHERE e2.`status` = e.`status`) ORDER BY e.`total_amount` DESC;","SELECT b.booking_id, b.passenger_id, b.booking_date, b.status, b.total_amount
+FROM bookings b
+JOIN booking_flights bf ON b.booking_id = bf.booking_id
+JOIN flights f ON bf.flight_id = f.flight_id
+WHERE b.booking_date >= '2024-01-01'
+GROUP BY b.booking_id, b.passenger_id, b.booking_date, b.status
+HAVING AVG(b.total_amount) > b.total_amount;",,True,False,agregacion,5541.21
+aerolinea_val-0016,aerolinea_val,dificil,Obtén los vuelos dentro de los primeros 2 precios de cada categoría. Escenario 1.,"WITH ranked AS (SELECT p.`flight_code`, g.`class_name`, p.`base_fare`, DENSE_RANK() OVER (PARTITION BY g.`fare_class_id` ORDER BY p.`base_fare` DESC) AS posicion FROM `flights` AS p JOIN `fare_classes` AS g ON g.`fare_class_id` = p.`fare_class_id`) SELECT `flight_code`, `class_name`, `base_fare`, posicion FROM ranked WHERE posicion <= 2 ORDER BY `class_name`, posicion;","SELECT f.flight_code, f.base_fare, fc.class_name
+FROM flights f
+JOIN fare_classes fc ON f.fare_class_id = fc.fare_class_id
+GROUP BY f.fare_class_id, f.base_fare
+ORDER BY f.base_fare ASC
+LIMIT 2;",,False,False,ejecucion,3504.24
+aerolinea_val-0017,aerolinea_val,dificil,Muestra el reserva más reciente de cada pasajero antes de 2024-01-28. Escenario 1.,"WITH ranked AS (SELECT m.`passenger_name`, e.`booking_id`, e.`booking_date`, ROW_NUMBER() OVER (PARTITION BY m.`passenger_id` ORDER BY e.`booking_date` DESC, e.`booking_id` DESC) AS fila FROM `passengers` AS m JOIN `bookings` AS e ON e.`passenger_id` = m.`passenger_id` WHERE e.`booking_date` <= '2024-01-28') SELECT `passenger_name`, `booking_id`, `booking_date` FROM ranked WHERE fila = 1 ORDER BY `passenger_name`;","SELECT p.passenger_name, b.booking_id, b.booking_date
+FROM passengers p
+JOIN bookings b ON p.passenger_id = b.passenger_id
+WHERE b.booking_date < '2024-01-28'
+GROUP BY p.passenger_id
+ORDER BY b.booking_date DESC
+LIMIT 1;",,False,False,ejecucion,3886.16
+aerolinea_val-0018,aerolinea_val,dificil,Calcula la participación porcentual de cada categoría en el valor de líneas desde 2024-01-01. Escenario 1.,"WITH totals AS (SELECT g.`class_name` AS categoria, SUM(l.`seats` * l.`unit_fare`) AS total_categoria FROM `fare_classes` AS g JOIN `flights` AS p ON p.`fare_class_id` = g.`fare_class_id` JOIN `booking_flights` AS l ON l.`flight_id` = p.`flight_id` JOIN `bookings` AS e ON e.`booking_id` = l.`booking_id` WHERE e.`booking_date` >= '2024-01-01' GROUP BY g.`fare_class_id`, g.`class_name`) SELECT categoria, ROUND(total_categoria, 2) AS total_categoria, ROUND(100 * total_categoria / SUM(total_categoria) OVER (), 2) AS porcentaje FROM totals ORDER BY total_categoria DESC;","SELECT 
+  fc.class_name,
+  SUM(bf.unit_fare) AS total_fare,
+  SUM(bf.unit_fare) * 100 / SUM(bf.unit_fare) OVER (PARTITION BY fc.class_name) AS participation_percentage
+FROM 
+  booking_flights bf
+JOIN 
+  flights f ON bf.flight_id = f.flight_id
+JOIN 
+  fare_classes fc ON f.fare_class_id = fc.fare_class_id
+WHERE 
+  f.created_at >= '2024-01-01'
+GROUP BY 
+  fc.class_name
+ORDER BY 
+  participation_percentage DESC;",,False,False,entidad_inexistente,7371.52
+aerolinea_val-0019,aerolinea_val,dificil,Lista reservas cuyo total supera el promedio de su mismo estado pending desde 2023-02-01. Escenario 2.,"SELECT e.`booking_id`, e.`total_amount` FROM `bookings` AS e WHERE e.`status` = 'pending' AND e.`booking_date` >= '2023-02-01' AND e.`total_amount` > (SELECT AVG(e2.`total_amount`) FROM `bookings` AS e2 WHERE e2.`status` = e.`status`) ORDER BY e.`total_amount` DESC;","SELECT b.booking_id, b.passenger_id, b.booking_date, b.status, b.total_amount
+FROM bookings b
+JOIN booking_flights bf ON b.booking_id = bf.booking_id
+JOIN flights f ON bf.flight_id = f.flight_id
+WHERE b.status = 'pending'
+AND b.booking_date >= '2023-02-01'
+GROUP BY b.booking_id, b.passenger_id, b.booking_date, b.status, b.total_amount
+HAVING AVG(b.total_amount) > b.total_amount;",,True,False,agregacion,6199.34
+aerolinea_val-0020,aerolinea_val,dificil,Obtén los vuelos dentro de los primeros 3 precios de cada categoría. Escenario 2.,"WITH ranked AS (SELECT p.`flight_code`, g.`class_name`, p.`base_fare`, DENSE_RANK() OVER (PARTITION BY g.`fare_class_id` ORDER BY p.`base_fare` DESC) AS posicion FROM `flights` AS p JOIN `fare_classes` AS g ON g.`fare_class_id` = p.`fare_class_id`) SELECT `flight_code`, `class_name`, `base_fare`, posicion FROM ranked WHERE posicion <= 3 ORDER BY `class_name`, posicion;","SELECT f.flight_code, f.base_fare, fc.class_name
+FROM flights f
+JOIN fare_classes fc ON f.fare_class_id = fc.fare_class_id
+GROUP BY f.fare_class_id, f.base_fare, fc.class_name
+ORDER BY f.base_fare ASC
+LIMIT 3;",,False,False,ejecucion,3531.31
+eventos_val-0001,eventos_val,facil,"Lista hasta 2 asistentes de Guatemala, ordenados por nombre. Escenario 1.",SELECT `nombre` FROM `asistentes` WHERE `ciudad` = 'Guatemala' ORDER BY `nombre` LIMIT 2;,"SELECT nombre, ciudad FROM asistentes WHERE ciudad = 'Guatemala' ORDER BY nombre LIMIT 2;",,True,True,correcto,1383.31
+eventos_val-0002,eventos_val,facil,Muestra los eventos con precio mayor a 23 y sus precios. Escenario 1.,"SELECT `nombre_evento`, `precio` FROM `eventos` WHERE `precio` > 23 ORDER BY `precio` DESC;","SELECT e.id_evento, e.nombre_evento, e.precio FROM eventos e WHERE e.precio > 23;",,True,False,filtro,1600.64
+eventos_val-0003,eventos_val,facil,¿Cuántos inscripcións tienen estado pagada? Variante 1. Escenario 1.,SELECT COUNT(*) AS total_inscripciones FROM `inscripciones` WHERE `estado` = 'pagada';,SELECT COUNT(id_inscripcion) FROM inscripciones WHERE estado = 'pagada';,,True,False,agregacion,1184.17
+eventos_val-0004,eventos_val,facil,Lista los identificadores y fechas de inscripcións entre 2024-01-01 y 2024-01-28. Escenario 1.,"SELECT `id_inscripcion`, `fecha_inscripcion` FROM `inscripciones` WHERE `fecha_inscripcion` BETWEEN '2024-01-01' AND '2024-01-28' ORDER BY `fecha_inscripcion`;","SELECT id_inscripcion, fecha_inscripcion FROM inscripciones WHERE fecha_inscripcion BETWEEN '2024-01-01' AND '2024-01-28';",,True,False,filtro,2688.36
+eventos_val-0005,eventos_val,facil,Indica el precio máximo de los eventos por encima de 23. Escenario 1.,SELECT MAX(`precio`) AS precio_maximo FROM `eventos` WHERE `precio` > 23;,SELECT MAX(precio) FROM eventos WHERE precio > 23;,,True,False,filtro,936.98
+eventos_val-0006,eventos_val,facil,Lista 2 categorías del catálogo en orden alfabético. Escenario 1.,SELECT `nombre_tipo` FROM `tipos_evento` ORDER BY `nombre_tipo` LIMIT 2;,SELECT nombre_tipo FROM tipos_evento ORDER BY nombre_tipo;,,True,False,resultado_distinto,828.68
+eventos_val-0007,eventos_val,facil,¿Cuál es el total promedio de los inscripcións con estado pagada? Variante 1. Escenario 1.,"SELECT ROUND(AVG(`total`), 2) AS promedio_total FROM `inscripciones` WHERE `estado` = 'pagada';",SELECT AVG(total) FROM inscripciones WHERE estado = 'pagada';,,True,False,agregacion,1073.87
+eventos_val-0008,eventos_val,media,"Muestra cada asistente y la cantidad de inscripcións con estado pagada, incluyendo quienes no tienen. Escenario 1.","SELECT m.`nombre`, COUNT(e.`id_inscripcion`) AS cantidad FROM `asistentes` AS m LEFT JOIN `inscripciones` AS e ON e.`id_asistente` = m.`id_asistente` AND e.`estado` = 'pagada' GROUP BY m.`id_asistente`, m.`nombre` ORDER BY cantidad DESC;",,"ParseError: Invalid expression / Unexpected token. Line 6, Col: 4.
+  es i ON a.id_asistente = i.id_asistente
+WHERE i.estado = 'pagada'
+GROUP BY a.id_asistente, a.nombre
+[4mWITH[0m ONLY_FULL_GROUP_BY;",False,False,sintaxis,3741.67
+eventos_val-0009,eventos_val,media,Calcula el total de inscripcións por ubicación desde 2024-01-01 para estado pagada. Escenario 1.,"SELECT m.`ciudad`, ROUND(SUM(e.`total`), 2) AS total FROM `asistentes` AS m JOIN `inscripciones` AS e ON e.`id_asistente` = m.`id_asistente` WHERE e.`fecha_inscripcion` >= '2024-01-01' AND e.`estado` = 'pagada' GROUP BY m.`ciudad` ORDER BY total DESC;","SELECT SUM(i.total) AS total_inscripciones
+FROM inscripciones i
+JOIN asistentes a ON i.id_asistente = a.id_asistente
+JOIN eventos e ON i.id_evento = e.id_evento
+WHERE a.ciudad = 'Ciudad de Prueba' AND i.estado = 'Pagada' AND i.fecha_inscripcion >= '2024-01-01'
+GROUP BY a.ciudad;",,False,False,entidad_inexistente,5659.78
+eventos_val-0010,eventos_val,media,Lista categorías con al menos 2 eventos y su precio promedio. Escenario 1.,"SELECT g.`nombre_tipo`, COUNT(p.`id_evento`) AS cantidad, ROUND(AVG(p.`precio`), 2) AS promedio FROM `tipos_evento` AS g JOIN `eventos` AS p ON p.`id_tipo` = g.`id_tipo` GROUP BY g.`id_tipo`, g.`nombre_tipo` HAVING COUNT(p.`id_evento`) >= 2 ORDER BY cantidad DESC;","SELECT t1.nombre_tipo, AVG(t2.precio) AS precio_promedio
+FROM tipos_evento t1
+JOIN eventos t2 ON t1.id_tipo = t2.id_tipo
+GROUP BY t1.id_tipo
+HAVING COUNT(*) >= 2;",,True,False,agregacion,3197.63
+eventos_val-0011,eventos_val,media,Muestra los eventos y unidades registradas en inscripcións pagada desde 2024-01-01. Escenario 1.,"SELECT p.`nombre_evento`, SUM(l.`entradas`) AS unidades FROM `eventos` AS p JOIN `inscripcion_eventos` AS l ON l.`id_evento` = p.`id_evento` JOIN `inscripciones` AS e ON e.`id_inscripcion` = l.`id_inscripcion` WHERE e.`estado` = 'pagada' AND e.`fecha_inscripcion` >= '2024-01-01' GROUP BY p.`id_evento`, p.`nombre_evento` ORDER BY unidades DESC;","SELECT e.nombre_evento, SUM(i.entradas) AS unidades_registradas
+FROM eventos e
+JOIN inscripciones_eventos ie ON e.id_evento = ie.id_evento
+JOIN inscripciones i ON ie.id_inscripcion = i.id_inscripcion
+WHERE i.estado = 'pagada'
+AND i.fecha_inscripcion >= '2024-01-01'
+GROUP BY e.id_evento, e.nombre_evento
+HAVING SUM(i.entradas) > 0
+ORDER BY e.nombre_evento;",,False,False,entidad_inexistente,6437.83
+eventos_val-0012,eventos_val,media,Encuentra asistentes sin inscripcións posteriores a 2024-01-01. Escenario 1.,SELECT m.`nombre` FROM `asistentes` AS m LEFT JOIN `inscripciones` AS e ON e.`id_asistente` = m.`id_asistente` AND e.`fecha_inscripcion` > '2024-01-01' WHERE e.`id_inscripcion` IS NULL ORDER BY m.`nombre`;,SELECT a.id_asistente FROM asistentes a WHERE a.id_asistente NOT IN (SELECT i.id_asistente FROM inscripciones i WHERE i.fecha_inscripcion > '2024-01-01');,,True,False,filtro,3036.17
+eventos_val-0013,eventos_val,media,Resume cantidad y total de inscripcións por mes del año 2024. Escenario 1.,"SELECT MONTH(`fecha_inscripcion`) AS mes, COUNT(*) AS cantidad, ROUND(SUM(`total`), 2) AS total FROM `inscripciones` WHERE YEAR(`fecha_inscripcion`) = 2024 GROUP BY MONTH(`fecha_inscripcion`) ORDER BY mes;","SELECT 
+  DATE_FORMAT(fecha_inscripcion, '%Y-%m') AS mes,
+  COUNT(*) AS cantidad,
+  SUM(total) AS total
+FROM 
+  inscripciones
+WHERE 
+  YEAR(fecha_inscripcion) = 2024
+GROUP BY 
+  DATE_FORMAT(fecha_inscripcion, '%Y-%m')
+ORDER BY 
+  mes;",,True,False,agregacion,4469.34
+eventos_val-0014,eventos_val,media,Devuelve los 2 asistentes con mayor promedio por inscripción pagada. Escenario 1.,"SELECT m.`nombre`, ROUND(AVG(e.`total`), 2) AS promedio FROM `asistentes` AS m JOIN `inscripciones` AS e ON e.`id_asistente` = m.`id_asistente` WHERE e.`estado` = 'pagada' GROUP BY m.`id_asistente`, m.`nombre` ORDER BY promedio DESC LIMIT 2;","SELECT a.nombre, AVG(e.precio_unitario * i.entradas) AS promedio
+FROM asistentes a
+JOIN inscripciones i ON a.id_asistente = i.id_asistente
+JOIN inscripcion_eventos ie ON i.id_inscripcion = ie.id_inscripcion
+JOIN eventos e ON ie.id_evento = e.id_evento
+WHERE i.estado = 'pagada'
+GROUP BY a.id_asistente
+ORDER BY promedio DESC
+LIMIT 2;",,False,False,entidad_inexistente,5731.36
+eventos_val-0015,eventos_val,dificil,Lista inscripcións cuyo total supera el promedio de su mismo estado pagada desde 2024-01-01. Escenario 1.,"SELECT e.`id_inscripcion`, e.`total` FROM `inscripciones` AS e WHERE e.`estado` = 'pagada' AND e.`fecha_inscripcion` >= '2024-01-01' AND e.`total` > (SELECT AVG(e2.`total`) FROM `inscripciones` AS e2 WHERE e2.`estado` = e.`estado`) ORDER BY e.`total` DESC;","SELECT i.id_inscripcion, i.total
+FROM inscripciones i
+JOIN (
+  SELECT estado, AVG(total) as promedio
+  FROM inscripciones
+  WHERE estado = 'pagada'
+  AND YEAR(fecha_inscripcion) = 2024
+  GROUP BY estado
+) p ON i.estado = p.estado
+WHERE i.total > p.promedio;",,True,False,agregacion,4603.56
+eventos_val-0016,eventos_val,dificil,Obtén los eventos dentro de los primeros 2 precios de cada categoría. Escenario 1.,"WITH ranked AS (SELECT p.`nombre_evento`, g.`nombre_tipo`, p.`precio`, DENSE_RANK() OVER (PARTITION BY g.`id_tipo` ORDER BY p.`precio` DESC) AS posicion FROM `eventos` AS p JOIN `tipos_evento` AS g ON g.`id_tipo` = p.`id_tipo`) SELECT `nombre_evento`, `nombre_tipo`, `precio`, posicion FROM ranked WHERE posicion <= 2 ORDER BY `nombre_tipo`, posicion;","SELECT e.id_evento, e.nombre_evento, e.precio
+FROM eventos e
+JOIN tipos_evento te ON e.id_tipo = te.id_tipo
+WHERE e.precio BETWEEN (SELECT MIN(precio) FROM eventos) AND (SELECT MAX(precio) FROM eventos)
+GROUP BY e.id_evento, e.nombre_evento, e.precio
+ORDER BY e.precio ASC;",,True,False,agregacion,4718.39
+eventos_val-0017,eventos_val,dificil,Muestra el inscripción más reciente de cada asistente antes de 2024-01-28. Escenario 1.,"WITH ranked AS (SELECT m.`nombre`, e.`id_inscripcion`, e.`fecha_inscripcion`, ROW_NUMBER() OVER (PARTITION BY m.`id_asistente` ORDER BY e.`fecha_inscripcion` DESC, e.`id_inscripcion` DESC) AS fila FROM `asistentes` AS m JOIN `inscripciones` AS e ON e.`id_asistente` = m.`id_asistente` WHERE e.`fecha_inscripcion` <= '2024-01-28') SELECT `nombre`, `id_inscripcion`, `fecha_inscripcion` FROM ranked WHERE fila = 1 ORDER BY `nombre`;","SELECT a.id_asistente, a.nombre, a.ciudad, MAX(i.fecha_inscripcion) AS fecha_inscripcion
+FROM asistentes a
+JOIN inscripciones i ON a.id_asistente = i.id_asistente
+WHERE i.fecha_inscripcion < '2024-01-28'
+GROUP BY a.id_asistente, a.nombre, a.ciudad
+ORDER BY a.id_asistente, a.nombre, a.ciudad;",,True,False,agregacion,5690.79
+eventos_val-0018,eventos_val,dificil,Calcula la participación porcentual de cada categoría en el valor de líneas desde 2024-01-01. Escenario 1.,"WITH totals AS (SELECT g.`nombre_tipo` AS categoria, SUM(l.`entradas` * l.`precio_unitario`) AS total_categoria FROM `tipos_evento` AS g JOIN `eventos` AS p ON p.`id_tipo` = g.`id_tipo` JOIN `inscripcion_eventos` AS l ON l.`id_evento` = p.`id_evento` JOIN `inscripciones` AS e ON e.`id_inscripcion` = l.`id_inscripcion` WHERE e.`fecha_inscripcion` >= '2024-01-01' GROUP BY g.`id_tipo`, g.`nombre_tipo`) SELECT categoria, ROUND(total_categoria, 2) AS total_categoria, ROUND(100 * total_categoria / SUM(total_categoria) OVER (), 2) AS porcentaje FROM totals ORDER BY total_categoria DESC;","SELECT 
+  t1.ciudad,
+  SUM(t2.entradas) * 100 / SUM(t3.total) AS participación
+FROM 
+  inscripciones_eventos t1
+JOIN 
+  eventos t2 ON t1.id_evento = t2.id_evento
+JOIN 
+  inscripciones t3 ON t1.id_inscripcion = t3.id_inscripcion
+WHERE 
+  t2.fecha >= '2024-01-01'
+GROUP BY 
+  t1.ciudad
+ORDER BY 
+  participación DESC;",,False,False,entidad_inexistente,6656.3
+eventos_val-0019,eventos_val,dificil,Lista inscripcións cuyo total supera el promedio de su mismo estado pendiente desde 2023-02-01. Escenario 2.,"SELECT e.`id_inscripcion`, e.`total` FROM `inscripciones` AS e WHERE e.`estado` = 'pendiente' AND e.`fecha_inscripcion` >= '2023-02-01' AND e.`total` > (SELECT AVG(e2.`total`) FROM `inscripciones` AS e2 WHERE e2.`estado` = e.`estado`) ORDER BY e.`total` DESC;","SELECT i.id_inscripcion, i.nombre_evento, i.total
+FROM inscripciones i
+JOIN inscripcion_eventos ie ON i.id_inscripcion = ie.id_inscripcion
+WHERE i.estado = 'pendiente'
+AND ie.id_evento IN (
+  SELECT e.id_evento
+  FROM eventos e
+  WHERE e.created_at >= '2023-02-01'
+  GROUP BY e.id_evento
+  HAVING AVG(i.total) > AVG(i.total)
+);",,False,False,entidad_inexistente,6313.15
+eventos_val-0020,eventos_val,dificil,Obtén los eventos dentro de los primeros 3 precios de cada categoría. Escenario 2.,"WITH ranked AS (SELECT p.`nombre_evento`, g.`nombre_tipo`, p.`precio`, DENSE_RANK() OVER (PARTITION BY g.`id_tipo` ORDER BY p.`precio` DESC) AS posicion FROM `eventos` AS p JOIN `tipos_evento` AS g ON g.`id_tipo` = p.`id_tipo`) SELECT `nombre_evento`, `nombre_tipo`, `precio`, posicion FROM ranked WHERE posicion <= 3 ORDER BY `nombre_tipo`, posicion;","SELECT e.id_evento, e.nombre_evento, e.precio, t.nombre_tipo
+FROM eventos e
+JOIN tipos_evento t ON e.id_tipo = t.id_tipo
+WHERE e.precio IN (
+  SELECT MIN(precio)
+  FROM eventos
+  GROUP BY id_tipo
+)
+GROUP BY e.id_evento, e.nombre_evento, e.precio, t.nombre_tipo
+ORDER BY e.precio ASC;",,True,False,agregacion,5144.46

@@ -1,0 +1,23 @@
+{
+  "status": "exported_from_completed_training",
+  "series": [
+    "train",
+    "validation"
+  ],
+  "runs": {
+    "qlora_r16": {
+      "checkpoint": "checkpoint-270",
+      "sha256": "158d6b5d8192d91c919024cfe0ee535c883397d9d6064f229dbfd2cecf5e4b66",
+      "train_points": 27,
+      "validation_points": 5
+    },
+    "qlora_r32": {
+      "checkpoint": "checkpoint-270",
+      "sha256": "96baf11bb6d1434f8420ed59a4c22a7216e46c6612da43c28bcc26d78593d490",
+      "train_points": 27,
+      "validation_points": 5
+    }
+  },
+  "csv": "curvas_loss.csv",
+  "chart": "curvas_loss.png"
+}

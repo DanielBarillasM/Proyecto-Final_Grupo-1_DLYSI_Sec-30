@@ -1,0 +1,9 @@
+torch>=2.5,<3
+numpy>=1.26,<3
+transformers>=4.48,<5
+peft>=0.14,<1
+accelerate>=1.2,<2
+bitsandbytes>=0.45,<1
+safetensors>=0.5,<1
+sentencepiece>=0.2,<1
+sqlglot>=26,<30

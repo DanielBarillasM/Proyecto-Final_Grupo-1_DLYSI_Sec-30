@@ -1,0 +1,9 @@
+{
+  "modelo_base": "Qwen/Qwen2.5-Coder-1.5B-Instruct",
+  "modelo_revision": "2e1fd397ee46e1388853d2af2c993145b0f1098a",
+  "adapter": "adapter/",
+  "adapter_repo_id": "Dani0604/proyecto3-text2sql-qlora",
+  "adapter_revision": "24658a4efce8303165906832f0eede2b5c56de84",
+  "usar_adapter": true,
+  "semilla": 2026
+}

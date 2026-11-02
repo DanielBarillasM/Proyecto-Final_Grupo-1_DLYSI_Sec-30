@@ -1,0 +1,6 @@
+{
+  "selected_run": "qlora_r32",
+  "selection_basis": "menor latencia p95 tras empate en EX y ejecutabilidad",
+  "adapter_weight": "adapter_model.safetensors",
+  "sha256": "d3126183a092521cb1feffb9424b188552d27bb8fc4b51a8d13a1348d89016f1"
+}

@@ -1,0 +1,13 @@
+{
+  "repo_id": "Dani0604/proyecto3-text2sql-qlora",
+  "repo_type": "model",
+  "private": false,
+  "revision": "24658a4efce8303165906832f0eede2b5c56de84",
+  "current_card_revision": "8799a08aeb8d11c999fe29a86a81cd53162ff7ba",
+  "public_verified_at": "2026-10-25",
+  "base_model": "Qwen/Qwen2.5-Coder-1.5B-Instruct",
+  "adapter_file": "adapter_model.safetensors",
+  "adapter_sha256": "d3126183a092521cb1feffb9424b188552d27bb8fc4b51a8d13a1348d89016f1",
+  "selected_run": "qlora_r32",
+  "published_at": "2026-10-24"
+}

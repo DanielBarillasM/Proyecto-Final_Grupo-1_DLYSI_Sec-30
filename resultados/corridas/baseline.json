@@ -1,0 +1,24 @@
+{
+  "name": "baseline",
+  "adapter": null,
+  "repair": false,
+  "examples": 40,
+  "weighted_ex": 0.038461538461538464,
+  "ex_by_difficulty": {
+    "facil": 0.07142857142857142,
+    "media": 0.07142857142857142,
+    "dificil": 0.0
+  },
+  "executable_rate": 0.625,
+  "latency_p50_ms": 3531.3081000001603,
+  "latency_p95_ms": 6656.302299999879,
+  "error_counts": {
+    "entidad_inexistente": 10,
+    "agregacion": 15,
+    "filtro": 5,
+    "resultado_distinto": 3,
+    "sintaxis": 2,
+    "correcto": 2,
+    "ejecucion": 3
+  }
+}
