@@ -5,7 +5,11 @@ import os
 
 import gradio as gr
 
-from production import InputValidationError, generate_for_production
+from production import (
+    InputValidationError,
+    generate_for_production,
+    generate_via_backend,
+)
 
 if os.getenv("SPACE_ID"):
     try:
@@ -34,7 +38,11 @@ CREATE TABLE pedidos (
 
 def _run(schema: str, question: str) -> tuple[str, str]:
     try:
-        result = generate_for_production(schema, question)
+        backend_url = os.getenv("TEXT_TO_SQL_BACKEND_URL", "").strip()
+        if backend_url:
+            result = generate_via_backend(schema, question, backend_url)
+        else:
+            result = generate_for_production(schema, question)
     except InputValidationError as exc:
         return "", f"⚠️ **Solicitud inválida:** {html.escape(str(exc))}"
     except Exception:
