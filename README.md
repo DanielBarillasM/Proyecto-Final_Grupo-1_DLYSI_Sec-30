@@ -197,6 +197,23 @@ Abra `http://127.0.0.1:7860`. La aplicación usa `config.json`; `usar_adapter` d
 El comando crea `dist/huggingface-space/` con únicamente el runtime, la interfaz, la configuración,
 los metadatos del adaptador y las dependencias. No incluye pesos, notebooks ni datos de entrenamiento.
 
+### Despliegue público
+
+El Space ZeroGPU permanente se encuentra temporalmente bloqueado porque la cuenta de Hugging Face
+tiene menos de 30 días. La decisión y las alternativas se documentan en
+[`docs/DECISIONES_DESPLIEGUE.md`](docs/DECISIONES_DESPLIEGUE.md).
+
+Para una demostración temporal con la RTX 4050 local:
+
+```powershell
+$env:GRADIO_SHARE = "true"
+.\.venv\Scripts\python.exe app.py
+```
+
+Gradio genera una URL pública aleatoria mientras el proceso permanece abierto. Sin
+`GRADIO_SHARE=true`, la aplicación sigue siendo local. El modo público debe utilizar únicamente
+esquemas sintéticos y cerrarse al terminar la demostración.
+
 ### Guion de demostración
 
 1. Abrir la URL pública desde una sesión externa.

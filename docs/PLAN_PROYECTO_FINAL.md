@@ -67,6 +67,7 @@ integrante; no se asignará trabajo ficticio.
 | Fuga de datos en logs | No registrar contenido, solo tamaños y metadatos técnicos |
 | Servicio inaccesible en clase | Demostración local, capturas y video corto como contingencia |
 | Diferencia entre dos integrantes y modalidad de tríos | Confirmar composición antes de cerrar portada y reparto |
+| Cuenta de Hugging Face menor de 30 días | Demo temporal de Gradio; ZeroGPU cuando la cuenta sea elegible |
 
 ## Criterio de terminado
 

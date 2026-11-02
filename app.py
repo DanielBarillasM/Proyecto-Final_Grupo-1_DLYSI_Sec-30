@@ -112,4 +112,9 @@ with gr.Blocks(title="Text-to-SQL · Modelo en producción") as demo:
 
 
 if __name__ == "__main__":
-    demo.queue(default_concurrency_limit=1).launch(css=CSS)
+    share_publicly = os.getenv("GRADIO_SHARE", "false").strip().lower() == "true"
+    demo.queue(default_concurrency_limit=1).launch(
+        css=CSS,
+        share=share_publicly,
+        show_error=False,
+    )
