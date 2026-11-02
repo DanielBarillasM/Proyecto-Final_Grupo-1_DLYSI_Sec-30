@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="../web/public/icon.svg" type="image/svg+xml">
+  <title>Text-to-SQL en producción</title>
+  <style>
+    :root {
+      --ink: #14282b;
+      --petrol: #0c5968;
+      --copper: #c7643b;
+      --cyan: #52b6c0;
+      --mist: #f1f6f6;
+      --surface: #ffffff;
+      --line: #ccd9d9;
+      --muted: #587074;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: #dfe8e8; color: var(--ink); }
+    body { font-family: "Aptos", "Segoe UI", sans-serif; }
+    code, .mono { font-family: "Cascadia Code", Consolas, monospace; }
+    .deck { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
+    .slide {
+      display: none;
+      position: relative;
+      width: min(1280px, calc(100vw - 48px));
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      padding: 58px 72px 56px;
+      box-shadow: 0 20px 60px rgb(20 40 43 / 14%);
+    }
+    .slide.active { display: flex; flex-direction: column; }
+    .slide::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 10px;
+      background: var(--petrol);
+    }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 {
+      max-width: 960px;
+      margin-bottom: 24px;
+      font-size: 72px;
+      line-height: 1.02;
+      letter-spacing: -0.045em;
+    }
+    h2 { margin-bottom: 28px; font-size: 46px; line-height: 1.08; letter-spacing: -0.035em; }
+    h3 { margin-bottom: 10px; font-size: 21px; color: var(--petrol); }
+    p, li { font-size: 22px; line-height: 1.38; }
+    ul, ol { margin: 0; padding-left: 1.25em; }
+    li + li { margin-top: 10px; }
+    .kicker {
+      margin-bottom: 18px;
+      color: var(--petrol);
+      font-size: 20px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+    .subtitle { max-width: 940px; color: var(--muted); font-size: 29px; line-height: 1.35; }
+    .meta {
+      margin-top: auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 24px;
+      color: var(--muted);
+      font-size: 18px;
+    }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 34px; align-items: start; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+    .band { padding: 24px 28px; background: var(--mist); border-left: 5px solid var(--petrol); }
+    .metric { font: 750 55px/1 "Cascadia Code", Consolas, monospace; color: var(--petrol); }
+    .metric-label { margin: 12px 0 0; color: var(--muted); font-size: 19px; }
+    .accent { color: var(--copper); font-weight: 750; }
+    .flow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 24px; margin-top: 20px; }
+    .flow > div { position: relative; padding-top: 16px; border-top: 5px solid var(--petrol); }
+    .flow > div:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      right: -20px;
+      top: 24px;
+      color: var(--copper);
+      font: 700 26px/1 sans-serif;
+    }
+    .flow strong { display: block; margin-bottom: 6px; color: var(--petrol); font-size: 20px; }
+    .flow span { color: var(--muted); font-size: 17px; line-height: 1.35; }
+    table { width: 100%; border-collapse: collapse; font-size: 20px; }
+    th, td {
+      padding: 12px 11px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+    th { color: var(--petrol); font-size: 18px; text-transform: uppercase; letter-spacing: .03em; }
+    tbody tr:last-child td { border-bottom: 0; }
+    .winner td { background: #e8f3f2; font-weight: 700; }
+    .callout {
+      margin-top: auto;
+      padding: 16px 20px;
+      background: var(--mist);
+      border-left: 5px solid var(--copper);
+      font-size: 19px;
+    }
+    .codebox {
+      padding: 18px 20px;
+      background: #102c31;
+      color: #ecf6f6;
+      border-radius: 5px;
+      font-size: 17px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+    .steps { counter-reset: step; display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; }
+    .step { position: relative; padding-top: 50px; }
+    .step::before {
+      counter-increment: step;
+      content: counter(step);
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--petrol);
+      color: white;
+      font-weight: 750;
+    }
+    .step strong { display: block; margin-bottom: 7px; font-size: 20px; }
+    .step span { color: var(--muted); font-size: 17px; line-height: 1.35; }
+    .footer { position: absolute; right: 42px; bottom: 24px; color: var(--muted); font: 15px/1 monospace; }
+    .controls { position: fixed; right: 22px; bottom: 18px; display: flex; gap: 8px; z-index: 10; }
+    button {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: white;
+      color: var(--ink);
+      padding: 10px 14px;
+      cursor: pointer;
+      font-weight: 650;
+    }
+    button:hover, button:focus-visible {
+      border-color: var(--petrol);
+      outline: 3px solid rgb(82 182 192 / 35%);
+    }
+    @media (max-width: 800px) {
+      .slide { aspect-ratio: auto; min-height: calc(100vh - 48px); padding: 42px 34px; }
+      h1 { font-size: 48px; }
+      h2 { font-size: 36px; }
+      .grid-2, .grid-3, .flow, .steps { grid-template-columns: 1fr; }
+      .flow > div:not(:last-child)::after { display: none; }
+    }
+    @media print {
+      @page { size: 13.333in 7.5in; margin: 0; }
+      html, body { background: white; }
+      .deck { display: block; padding: 0; }
+      .slide, .slide.active {
+        display: flex;
+        flex-direction: column;
+        width: 13.333in;
+        height: 7.5in;
+        aspect-ratio: auto;
+        border: 0;
+        box-shadow: none;
+        page-break-after: always;
+        break-after: page;
+      }
+      .grid-2 { grid-template-columns: repeat(2, 1fr); }
+      .grid-3 { grid-template-columns: repeat(3, 1fr); }
+      .flow { grid-template-columns: repeat(5, 1fr); }
+      .steps { grid-template-columns: repeat(4, 1fr); }
+      .flow > div:not(:last-child)::after { display: block; }
+      .controls { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="deck" aria-live="polite">
+    <section class="slide active">
+      <p class="kicker">Proyecto Final · Deep Learning y Sistemas Inteligentes</p>
+      <h1>Text-to-SQL en producción</h1>
+      <p class="subtitle">Un modelo QLoRA que convierte preguntas en español en consultas MySQL seguras y revisables.</p>
+      <div class="meta">
+        <div>Wilson Alejandro Calderón Argueta · 22018<br>Pablo Daniel Barillas Moreno · 22193</div>
+        <div>UVG · Sección 30 · 2026</div>
+      </div>
+      <span class="footer">01 / 09</span>
+    </section>
+
+    <section class="slide">
+      <p class="kicker">Problema, usuario y decisión</p>
+      <h2>El analista necesita SQL confiable sin escribirlo</h2>
+      <div class="grid-2">
+        <div class="band">
+          <h3>Usuario</h3>
+          <p>Una persona que conoce el negocio y el esquema, pero depende de un especialista para consultar la base.</p>
+          <h3>Decisión</h3>
+          <p>Qué consulta de lectura usar para responder una pregunta operativa.</p>
+        </div>
+        <div>
+          <h3>Contrato del servicio</h3>
+          <div class="codebox">Entrada
+DDL MySQL + pregunta en español
+
+Salida
+Una consulta SELECT o WITH ... SELECT
+
+Control
+Sin escritura y sin conexión a datos reales</div>
+        </div>
+      </div>
+      <p class="callout">El usuario revisa el SQL antes de ejecutarlo. El servicio reduce la barrera técnica, pero no reemplaza permisos ni juicio humano.</p>
+      <span class="footer">02 / 09</span>
+    </section>
+
+    <section class="slide">
+      <p class="kicker">Modelo de origen y validación</p>
+      <h2>QLoRA superó los criterios definidos antes de entrenar</h2>
+      <table>
+        <thead><tr><th>Variante</th><th>EX ponderada</th><th>Ejecutable</th><th>p95</th></tr></thead>
+        <tbody>
+          <tr><td>Qwen base</td><td>3.8%</td><td>62.5%</td><td>6.66 s</td></tr>
+          <tr><td>QLoRA r=16</td><td>97.4%</td><td>97.5%</td><td>15.72 s</td></tr>
+          <tr class="winner"><td>QLoRA r=32</td><td>97.4%</td><td>97.5%</td><td>13.20 s</td></tr>
+        </tbody>
+      </table>
+      <div class="grid-3" style="margin-top:auto">
+        <div><div class="metric">≥70%</div><p class="metric-label">meta de EX</p></div>
+        <div><div class="metric">+15</div><p class="metric-label">puntos mínimos sobre baseline</p></div>
+        <div><div class="metric">39/40</div><p class="metric-label">respuestas correctas</p></div>
+      </div>
+      <p class="callout">r=32 no mejoró la exactitud frente a r=16. Ganó por menor latencia p95 después del empate.</p>
+      <span class="footer">03 / 09</span>
+    </section>
+
+    <section class="slide">
+      <p class="kicker">Arquitectura de producción</p>
+      <h2>La aplicación limita la entrada, la salida y el uso de GPU</h2>
+      <div class="flow">
+        <div><strong>Navegador</strong><span>DDL y pregunta del usuario.</span></div>
+        <div><strong>Validación</strong><span>CREATE TABLE y límites de tamaño.</span></div>
+        <div><strong>Qwen + QLoRA</strong><span>Revisiones inmutables.</span></div>
+        <div><strong>Guardia SQL</strong><span>Una consulta de lectura.</span></div>
+        <div><strong>Respuesta</strong><span>SQL, latencia e identificador.</span></div>
+      </div>
+      <div class="grid-3" style="margin-top:auto">
+        <div><div class="metric">1</div><p class="metric-label">generación simultánea</p></div>
+        <div><div class="metric">0</div><p class="metric-label">credenciales solicitadas</p></div>
+        <div><div class="metric">2</div><p class="metric-label">revisiones de modelo fijadas</p></div>
+      </div>
+      <span class="footer">04 / 09</span>
+    </section>
+
+    <section class="slide">
+      <p class="kicker">Experiencia de uso</p>
+      <h2>Una persona externa puede generar y revisar SQL</h2>
+      <div class="steps">
+        <div class="step"><strong>Pegar esquema</strong><span>La interfaz incluye un ejemplo MySQL editable.</span></div>
+        <div class="step"><strong>Escribir pregunta</strong><span>Lenguaje natural en español.</span></div>
+        <div class="step"><strong>Generar</strong><span>El servicio asigna GPU y valida la salida.</span></div>
+        <div class="step"><strong>Revisar SQL</strong><span>La respuesta muestra latencia y request ID.</span></div>
+      </div>
+      <div class="codebox" style="margin-top:32px">SELECT c.nombre, SUM(p.total) AS total_completado
+FROM clientes AS c
+JOIN pedidos AS p ON p.cliente_id = c.id
+WHERE p.estado = 'completado'
+GROUP BY c.id, c.nombre;</div>
+      <p class="callout">La demostración usará tres preguntas: una fácil, una media y una difícil.</p>
+      <span class="footer">05 / 09</span>
+    </section>
+
+    <section class="slide">
+      <p class="kicker">Controles y monitoreo</p>
+      <h2>La evidencia operativa protege privacidad y seguridad</h2>
+      <table>
+        <thead><tr><th>Riesgo</th><th>Control</th><th>Evidencia</th></tr></thead>
+        <tbody>
+          <tr><td>SQL destructivo</td><td>sqlglot rechaza DDL, DML y sentencias múltiples</td><td>Pruebas automatizadas</td></tr>
+          <tr><td>Entrada fuera de contrato</td><td>Longitud máxima y presencia de CREATE TABLE</td><td>Error visible y categorizado</td></tr>
+          <tr><td>Fuga en logs</td><td>No se guarda esquema ni pregunta</td><td>Prueba de privacidad</td></tr>
+          <tr><td>Saturación de GPU</td><td>Una generación simultánea</td><td>Cola y estado del runtime</td></tr>
+        </tbody>
+      </table>
+      <p class="callout">Cada evento registra fecha UTC, request ID, estado, latencia, tamaños de entrada y categoría de error.</p>
+      <span class="footer">06 / 09</span>
+    </section>
+
+    <section class="slide">
+      <p class="kicker">Evidencia del pase a producción</p>
+      <h2>El comité podrá rastrear cada afirmación</h2>
+      <div class="grid-2">
+        <div>
+          <h3>Evidencia ya verificada</h3>
+          <ul>
+            <li>2,592 pares y 40 preguntas con hashes congelados.</li>
+            <li>39/40 respuestas correctas en esquemas inéditos.</li>
+            <li>Prueba limpia en Tesla T4.</li>
+            <li>Suite local de 39 pruebas.</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Evidencia del servicio</h3>
+          <ul>
+            <li>URL pública probada desde otra sesión.</li>
+            <li>Capturas de tres generaciones.</li>
+            <li>Logs anonimizados con request ID.</li>
+            <li>Commit y revisión desplegados.</li>
+          </ul>
+        </div>
+      </div>
+      <p class="callout">La URL y las capturas se incorporarán solo después de verificar el despliegue real.</p>
+      <span class="footer">07 / 09</span>
+    </section>
+
+    <section class="slide">
+      <p class="kicker">Supuestos y límites</p>
+      <h2>El uso responsable requiere revisión humana</h2>
+      <table>
+        <thead><tr><th>Supuesto o límite</th><th>Impacto</th><th>Mitigación</th></tr></thead>
+        <tbody>
+          <tr><td>DDL completo y pregunta sobre ese esquema</td><td>Entidades ausentes producen errores semánticos</td><td>Validación y mensaje claro</td></tr>
+          <tr><td>Datos sintéticos y dos esquemas de validación</td><td>Generalización limitada</td><td>Monitorear fallos por dominio</td></tr>
+          <tr><td>GPU bajo demanda</td><td>Cola o arranque en frío</td><td>Calentar servicio y tener plan local</td></tr>
+          <tr><td>SQL seguro puede ser incorrecto</td><td>Riesgo de una respuesta equivocada</td><td>Revisión antes de ejecutar</td></tr>
+        </tbody>
+      </table>
+      <span class="footer">08 / 09</span>
+    </section>
+
+    <section class="slide">
+      <p class="kicker">Recomendación al comité</p>
+      <h2>Mantener el modelo para consultas supervisadas</h2>
+      <div class="grid-2">
+        <div class="band">
+          <div class="metric">97.4%</div>
+          <p class="metric-label">EX ponderada frente a 3.8% del baseline</p>
+        </div>
+        <div>
+          <h3>Condiciones de operación</h3>
+          <ol>
+            <li>Conservar la restricción de solo lectura.</li>
+            <li>Exigir revisión antes de ejecutar.</li>
+            <li>Monitorear latencia, errores y dominios nuevos.</li>
+            <li>No registrar contenido del usuario.</li>
+          </ol>
+        </div>
+      </div>
+      <div class="meta"><div>Modelo · servicio · seguridad · evidencia</div><div class="accent">Preguntas</div></div>
+      <span class="footer">09 / 09</span>
+    </section>
+  </main>
+
+  <nav class="controls" aria-label="Controles de presentación">
+    <button type="button" id="prev" aria-label="Diapositiva anterior">Anterior</button>
+    <button type="button" id="next" aria-label="Diapositiva siguiente">Siguiente</button>
+  </nav>
+
+  <script>
+    const slides = [...document.querySelectorAll('.slide')];
+    let current = 0;
+    function show(index) {
+      current = (index + slides.length) % slides.length;
+      slides.forEach((slide, i) => slide.classList.toggle('active', i === current));
+      document.title = `${String(current + 1).padStart(2, '0')} · Text-to-SQL en producción`;
+    }
+    document.querySelector('#prev').addEventListener('click', () => show(current - 1));
+    document.querySelector('#next').addEventListener('click', () => show(current + 1));
+    document.addEventListener('keydown', (event) => {
+      if (['ArrowRight', 'PageDown', ' '].includes(event.key)) show(current + 1);
+      if (['ArrowLeft', 'PageUp'].includes(event.key)) show(current - 1);
+      if (event.key === 'Home') show(0);
+      if (event.key === 'End') show(slides.length - 1);
+    });
+  </script>
+</body>
+</html>
