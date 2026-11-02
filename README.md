@@ -5,9 +5,26 @@ de solo lectura. El proyecto lleva a producción el modelo desarrollado en el Pr
 presentar un modelo nuevo: conserva los datos, el protocolo experimental y el adaptador ganador,
 y añade una interfaz pública, controles de entrada, telemetría y evidencia operativa.
 
-**Estado al 2 de noviembre de 2026:** migración reproducible y aplicación de producción en
-desarrollo. La URL pública todavía no se declara como evidencia hasta completar y verificar el
-despliegue.
+<div align="center">
+  <strong>Qwen2.5-Coder-1.5B + QLoRA r=32</strong><br>
+  <code>MySQL 8.4</code> · <code>Gradio</code> · <code>FastAPI</code> · <code>Next.js</code>
+</div>
+
+> **Estado al 2 de noviembre de 2026:** migración reproducible y aplicación de producción en
+> desarrollo. La URL pública todavía no se declara como evidencia hasta completar y verificar el
+> despliegue.
+
+## Vista rápida
+
+| Datos congelados | Calidad | Servicio | Verificación local |
+|---:|---:|---|---:|
+| 2,592 pares · 12 esquemas | 97.4% EX ponderada | Gradio + GPU bajo demanda | 41 pruebas aprobadas |
+| 40 preguntas · 2 esquemas inéditos | 39/40 correctas | SQL de solo lectura | HTTP 200 en localhost |
+
+**Navegación:** [problema](#1-problemática) · [plan](#2-planificación) ·
+[modelo](#4-modelo-planteado) · [validación](#5-validación-de-hipótesis) ·
+[arquitectura](#6-herramientas-y-arquitectura) ·
+[evidencias](#7-evidencias-del-pase-a-producción) · [ejecución](#ejecución)
 
 ## Equipo
 
@@ -121,6 +138,16 @@ flowchart LR
 
 La descripción ampliada está en [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.md).
 
+### Decisiones de ingeniería
+
+| Decisión | Razón | Consecuencia aceptada |
+|---|---|---|
+| Reutilizar el modelo del Proyecto 3 | El objetivo pide producción, no un modelo nuevo | El esfuerzo se concentra en servicio y evidencia |
+| Publicar Gradio como interfaz principal | Reduce piezas operativas y funciona con ZeroGPU | FastAPI y Next.js quedan como ruta local |
+| Descargar el adaptador fijado | Evita duplicar 140.9 MB en GitHub | La primera carga depende de Hugging Face |
+| Procesar una solicitud a la vez | Protege memoria y estado del runtime | Menor concurrencia, adecuada para la demostración |
+| Omitir texto en telemetría | Reduce exposición de esquemas potencialmente sensibles | El diagnóstico usa tamaños, estado y request ID |
+
 ## 7. Evidencias del pase a producción
 
 Esta sección distingue evidencia real de trabajo pendiente. Ningún enlace o captura se marcará como
@@ -129,7 +156,7 @@ completado antes de probarlo desde fuera del equipo.
 | Evidencia | Estado | Ubicación |
 |---|---|---|
 | Aplicación pública | Pendiente de despliegue | Se añadirá la URL verificada |
-| Pruebas unitarias y de seguridad | En ejecución | `tests/` |
+| Pruebas unitarias y de seguridad | 41 aprobadas | `tests/` |
 | Logs sin datos de usuario | Implementado localmente | `logs/usage.jsonl` (no versionado) |
 | Capturas de uso real | Pendiente | `docs/evidencias/capturas/` |
 | Muestra anonimizada de eventos | Pendiente | `docs/evidencias/logs/` |
@@ -158,6 +185,24 @@ descarga el modelo base y el adaptador fijado.
 
 Abra `http://127.0.0.1:7860`. La aplicación usa `config.json`; `usar_adapter` debe permanecer en
 `true` para la variante final.
+
+### Construir el paquete de despliegue
+
+```powershell
+.\.venv\Scripts\python.exe scripts\build_space_bundle.py
+```
+
+El comando crea `dist/huggingface-space/` con únicamente el runtime, la interfaz, la configuración,
+los metadatos del adaptador y las dependencias. No incluye pesos, notebooks ni datos de entrenamiento.
+
+### Guion de demostración
+
+1. Abrir la URL pública desde una sesión externa.
+2. Confirmar que el ejemplo contiene dos tablas relacionadas.
+3. Ejecutar una pregunta fácil, una media y una difícil.
+4. Relacionar cada captura con su `request_id` y evento anonimizado.
+5. Mostrar que una salida `DELETE` o una sentencia múltiple se rechaza en las pruebas.
+6. Cerrar con las limitaciones y la recomendación de uso supervisado.
 
 ### API y aplicación Next.js heredadas
 

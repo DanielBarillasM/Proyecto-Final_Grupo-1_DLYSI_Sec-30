@@ -1,54 +1,80 @@
-\documentclass[10pt,letterpaper]{article}
-\usepackage[T1]{fontenc}
+\documentclass[11pt,letterpaper]{article}
 \usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
 \usepackage[spanish,es-nodecimaldot]{babel}
-\usepackage{lmodern,booktabs,tabularx,array,float,longtable,graphicx}
-\usepackage[letterpaper,margin=2.0cm,headheight=18pt]{geometry}
-\usepackage{xcolor,tcolorbox,fancyhdr,hyperref}
-\definecolor{ink}{HTML}{173532}
-\definecolor{teal}{HTML}{146C64}
-\definecolor{rust}{HTML}{B34D2D}
-\definecolor{paper}{HTML}{F3F0E8}
-\definecolor{line}{HTML}{D9D7CD}
-\hypersetup{colorlinks=true,linkcolor=teal,urlcolor=rust,pdftitle={Text-to-SQL con QLoRA},pdfauthor={Wilson Calderón y Pablo Barillas}}
-\pagestyle{fancy}
-\fancyhf{}
-\lhead{\small\color{teal}Text-to-SQL con QLoRA}
-\rhead{\small\color{teal}Proyecto 3}
-\cfoot{\thepage}
-\renewcommand{\headrulewidth}{.4pt}
-\newtcolorbox{resultado}[1]{colback=paper,colframe=teal,boxrule=.7pt,arc=1mm,title=\textbf{#1},coltitle=ink}
+\usepackage{geometry}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage[most]{tcolorbox}
+\usepackage{microtype}
+
+\geometry{margin=2.2cm}
+\definecolor{ink}{HTML}{14282B}
+\definecolor{teal}{HTML}{0C5968}
+\definecolor{rust}{HTML}{C7643B}
+\definecolor{paper}{HTML}{F1F6F6}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=teal,
+  urlcolor=rust,
+  pdftitle={Text-to-SQL con QLoRA en producción},
+  pdfauthor={Wilson Alejandro Calderón Argueta y Pablo Daniel Barillas Moreno}
+}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{.7em}
+\setlist[itemize]{leftmargin=1.4em,itemsep=.2em,topsep=.2em}
+\setlist[enumerate]{leftmargin=1.6em,itemsep=.2em,topsep=.2em}
 \newcommand{\code}[1]{\texttt{#1}}
-\newcommand{\repo}{\code{Proyecto-3\_Grupo-1\_DLYSI\_Sec-30}}
+\newcommand{\repo}{\code{Proyecto-Final\_Grupo-1\_DLYSI\_Sec-30}}
+\newtcolorbox{resultado}[1]{
+  colback=paper,
+  colframe=teal,
+  boxrule=.7pt,
+  arc=1mm,
+  title=\textbf{#1},
+  coltitle=ink
+}
 
 \begin{document}
-\pagenumbering{gobble}
-\begin{titlepage}
 \color{ink}
+\pagenumbering{gobble}
+
+\begin{titlepage}
 \vspace*{1cm}
-\noindent{\small\begin{tabularx}{\textwidth}{@{}Xr@{}}UNIVERSIDAD DEL VALLE DE GUATEMALA&SECCIÓN 30\end{tabularx}}
+\noindent{\small\begin{tabularx}{\textwidth}{@{}Xr@{}}
+UNIVERSIDAD DEL VALLE DE GUATEMALA & SECCIÓN 30
+\end{tabularx}}
 \par\vspace{.25cm}
 \noindent{\color{teal}\rule{\textwidth}{2pt}\par}
 \vspace{1.5cm}
-{\Huge\bfseries Text-to-SQL con QLoRA\par}
+{\Huge\bfseries Text-to-SQL con QLoRA en producción\par}
 \vspace{.35cm}
-{\Large Generación reproducible de consultas MySQL desde preguntas en español\par}
+{\Large Generación segura de consultas MySQL desde preguntas en español\par}
 \vspace{1.2cm}
+
 \begin{resultado}{Objetivo}
-Ajustar Qwen2.5-Coder-1.5B-Instruct mediante QLoRA, comparar dos capacidades de adapter y medir exactitud por ejecución sobre esquemas inéditos. La entrega conserva una ruta oficial determinista, una prueba limpia en Tesla T4 y evidencia auditable de datos, entrenamiento y evaluación.
+Poner en producción el modelo desarrollado en el Proyecto 3 para que una persona externa pueda
+usarlo mediante una aplicación web. La adaptación conserva los datos, el modelo y las métricas,
+y añade validación de entradas, guardia SQL, telemetría privada y evidencia operativa.
 \end{resultado}
+
 \vfill
 \begin{tabular}{@{}ll@{}}
-\textbf{Wilson Alejandro Calderón Argueta}&22018\\
-\textbf{Pablo Daniel Barillas Moreno}&22193
+\textbf{Wilson Alejandro Calderón Argueta} & 22018\\
+\textbf{Pablo Daniel Barillas Moreno} & 22193
 \end{tabular}
 \vspace{.8cm}
 
-Deep Learning y Sistemas Inteligentes\\2026
+Deep Learning y Sistemas Inteligentes\\
+2026
 \vspace{.35cm}
 
-\small\textbf{Repositorio privado:}\\
-\url{https://github.com/DanielBarillasM/Proyecto-3_Grupo-1_DLYSI_Sec-30.git}
+\small\textbf{Repositorio:}\\
+\url{https://github.com/DanielBarillasM/Proyecto-Final_Grupo-1_DLYSI_Sec-30}
 \end{titlepage}
 
 \pagenumbering{arabic}
@@ -57,202 +83,177 @@ Deep Learning y Sistemas Inteligentes\\2026
 
 \section{Resumen ejecutivo}
 
-Se construyó una canalización completa para traducir un esquema relacional y una pregunta en español a SQL de lectura compatible con MySQL. El conjunto experimental contiene 2,592 pares aceptados sobre 12 esquemas de entrenamiento. La validación propia congela 40 preguntas sobre dos esquemas no vistos. La revisión humana cubre 100 filas, divididas entre los dos integrantes.
+El sistema recibe el DDL de un esquema y una pregunta en español, y devuelve una única consulta
+MySQL de solo lectura. El modelo base es Qwen2.5-Coder-1.5B-Instruct con un adaptador QLoRA
+\code{r=32}. En la validación heredada del Proyecto 3 alcanzó 97.4\% de exactitud ponderada por
+ejecución, frente a 3.8\% del modelo base.
 
-El baseline obtuvo 3.8\% de exactitud por ejecución ponderada (EX). QLoRA $r=16$ y $r=32$ alcanzaron 97.4\%; se eligió $r=32$ porque, tras empatar en EX y ejecutabilidad, presentó menor latencia p95. El adapter ganador quedó integrado, publicado como respaldo público y verificado en una sesión limpia de Google Colab con Tesla T4.
+El Proyecto Final no presenta un modelo nuevo ni repite el entrenamiento. El trabajo se concentra
+en la ruta de producción: interfaz pública, recuperación reproducible del adaptador, límites de
+entrada, rechazo de SQL destructivo, control de concurrencia y telemetría sin guardar contenido.
 
-\begin{resultado}{Resultado principal}
-El ajuste incrementó la EX ponderada en 93.6 puntos porcentuales frente al baseline. En T4, el adapter cargó en 42.728 s con 1.438 GB de VRAM asignada; las pruebas representativas y la reparación terminaron dentro del límite de 30 s por pregunta.
+\section{Problemática}
+
+El usuario objetivo conoce el negocio y la estructura de sus datos, pero no necesariamente domina
+SQL. Hoy depende de un especialista para convertir cada pregunta operativa en una consulta. El
+modelo apoya la decisión de qué consulta de lectura utilizar para obtener la información solicitada.
+
+\begin{resultado}{Alcance operativo}
+La aplicación propone SQL para revisión. No solicita credenciales, no se conecta a una base de
+negocio y no ejecuta cambios. Una consulta segura todavía puede ser semánticamente incorrecta, por
+lo que el usuario debe revisarla antes de ejecutarla.
 \end{resultado}
 
-\section{Problema, alcance y contrato}
+\section{Planificación}
 
-La entrada consiste en un DDL y una pregunta. La salida oficial se obtiene mediante:
-
-\begin{center}
-\code{generar\_sql(esquema, pregunta, ejecutar=None)}
-\end{center}
-
-La función de \code{solucion.py} devuelve una única sentencia \code{SELECT} o \code{WITH ... SELECT}, no usa APIs externas y aplica generación determinista. La guardia sintáctica rechaza sentencias múltiples, DDL y DML. \code{config.json} permite comparar el modelo base y el adapter sin modificar el prompt.
-
-Si el evaluador proporciona \code{ejecutar}, el sistema prueba la primera consulta y realiza como máximo una reparación guiada por el mensaje de MySQL. La implementación usa hasta dos llamadas, por debajo del máximo de tres permitido por el enunciado. La API FastAPI y la aplicación Next.js son demostraciones complementarias; la evaluación oficial no depende de ellas.
-
-\section{Datos y control de fuga}
-
-\subsection{Construcción y procedencia}
-
-Se diseñaron 14 esquemas relacionales sintéticos y revisables, con tablas, claves, relaciones, índices y datos semilla. Doce dominios se asignaron a entrenamiento; \emph{aerolínea} y \emph{eventos} quedaron reservados para validación. Las plantillas cubren filtros, orden, agregaciones, agrupación, \code{JOIN}, subconsultas y funciones de ventana. Cada ejemplo registra esquema, dificultad, fuente y licencia.
-
-\begin{table}[H]
-\centering
-\caption{Manifiesto del dataset validado en MySQL 8.4.10.}
-\begin{tabular}{@{}lrrl@{}}
+\begin{tabularx}{\textwidth}{@{}lXX@{}}
 \toprule
-Partición&Esquemas&Ejemplos&Estado\\
+\textbf{Fecha} & \textbf{Resultado} & \textbf{Puerta de calidad}\\
 \midrule
-Entrenamiento&12&2,592&Aceptados\\
-Validación propia&2&40&Congelados y ejecutables\\
-Descartes&--&0&Archivo auditable\\
-\bottomrule
-\end{tabular}
-\end{table}
-
-La separación se comprueba por \code{schema\_id} y por hash estructural: no existe intersección entre los esquemas de entrenamiento y validación. La validación contiene 14 preguntas fáciles, 14 medias y 12 difíciles. Los hashes SHA-256, conteos y versión del motor se conservan en \code{resultados/dataset\_manifest.json}.
-
-\subsection{Revisión humana}
-
-\code{datos/revision\_muestra.csv} contiene 100 filas confirmadas: Pablo Daniel Barillas Moreno revisó las filas 1--50 y Wilson Alejandro Calderón Argueta las filas 51--100. La bitácora documenta retrospectivamente esa revisión y enlaza la evidencia. Esta asignación no sustituye el historial: los archivos, corridas y commits siguen siendo la evidencia principal.
-
-\section{Metodología experimental}
-
-\subsection{Modelo y prompt común}
-
-Se emplea \code{Qwen/Qwen2.5-Coder-1.5B-Instruct} con cuantización NF4 de 4 bits, cómputo FP16 y checkpointing de gradientes. El prompt declara el dialecto MySQL, incorpora el esquema y la pregunta y exige únicamente SQL. Baseline y adapters comparten prompt, posprocesamiento, guardia SQL y evaluador.
-
-\subsection{Comparación controlada de dos QLoRA}
-
-\begin{table}[H]
-\centering
-\caption{Diseño experimental: el rango es la única variable intencional.}
-\begin{tabularx}{\textwidth}{@{}lccXX@{}}
-\toprule
-Corrida&$r$&$\alpha$&Constantes&Hipótesis\\
-\midrule
-A&16&32&dropout .05, semilla 2026, datos, prompt y épocas&Menor costo con capacidad suficiente\\
-B&32&32&dropout .05, semilla 2026, datos, prompt y épocas&Mayor capacidad para composición compleja\\
+2--3 nov & Migración y trazabilidad & Código, datos y hashes verificados\\
+4 nov & Aplicación y controles & Flujo local, guardia SQL y telemetría\\
+5--6 nov & Despliegue & URL pública probada desde otra sesión\\
+7 nov & Evidencias y documentación & README con siete secciones y pruebas\\
+8 nov & Presentación & PDF de nueve diapositivas y ensayo\\
+9 nov & Congelamiento & Release candidata y contingencia local\\
+10--15 nov & Ajustes & Correcciones sin alterar el experimento\\
 \bottomrule
 \end{tabularx}
-\end{table}
 
-La selección usa EX ponderada como criterio primario, ejecutabilidad como segundo criterio y latencia p95 para desempatar. La pérdida de entrenamiento no decide el ganador porque no mide directamente equivalencia de resultados SQL.
+Wilson mantiene la trazabilidad de datos y modelo. Pablo mantiene el runtime, la interfaz y el
+despliegue. Ambos revisan pruebas, documentación, evidencias y presentación. El enunciado indica
+modalidad de tríos; la composición debe confirmarse antes de cerrar la portada y el reparto oral.
 
-\subsection{Pérdida, parámetros y tiempo}
+\section{Supuestos}
 
-\begin{table}[H]
-\centering
-\caption{Trazas de entrenamiento registradas.}
-\begin{tabular}{@{}lrrrr@{}}
+\begin{itemize}
+  \item El usuario proporciona un DDL con al menos una sentencia \code{CREATE TABLE}.
+  \item La pregunta está en español y se refiere a entidades presentes en el esquema.
+  \item El dialecto objetivo es MySQL 8.4 y la salida debe ser una sola consulta de lectura.
+  \item El proveedor asigna GPU bajo demanda; la primera solicitud puede tener cola o arranque en frío.
+  \item El servicio procesa una generación a la vez para proteger el runtime.
+  \item Los datos sintéticos y dos esquemas inéditos no representan todos los dominios reales.
+\end{itemize}
+
+\section{Modelo planteado}
+
+El proyecto parte del commit
+\code{df34c14c5afecddaa0d977832a56cec80c590244} del Proyecto 3. El modelo base y el adaptador
+se fijan mediante revisiones inmutables en \code{config.json}. El adaptador público es
+\url{https://huggingface.co/Dani0604/proyecto3-text2sql-qlora}.
+
+La adaptación de producción introduce los siguientes cambios:
+
+\begin{itemize}
+  \item descarga del adaptador desde Hugging Face cuando no existen pesos locales;
+  \item interfaz Gradio compatible con GPU bajo demanda;
+  \item validación de longitudes y presencia de \code{CREATE TABLE};
+  \item guardia que acepta únicamente \code{SELECT} o \code{WITH ... SELECT};
+  \item respuesta con latencia, variante e identificador de solicitud;
+  \item telemetría que omite el esquema y la pregunta.
+\end{itemize}
+
+\section{Validación de hipótesis}
+
+Antes del entrenamiento se definieron dos criterios: EX ponderada de al menos 0.70 y una mejora
+absoluta de al menos 0.15 frente al baseline.
+
+\begin{center}
+\begin{tabular}{@{}lrrr@{}}
 \toprule
-Configuración&Parámetros entrenables&Tiempo&Loss paso 10&Eval loss final\\
+\textbf{Variante} & \textbf{EX ponderada} & \textbf{Ejecutable} & \textbf{p95}\\
 \midrule
-QLoRA $r=16$&18,464,768&120.7 min&0.2586&0.000389\\
-QLoRA $r=32$&36,929,536&133.4 min&0.2625&0.002012\\
+Qwen base & 3.8\% & 62.5\% & 6.66 s\\
+QLoRA $r=16$ & 97.4\% & 97.5\% & 15.72 s\\
+\textbf{QLoRA $r=32$} & \textbf{97.4\%} & \textbf{97.5\%} & \textbf{13.20 s}\\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{center}
 
-Ambas curvas descendieron rápidamente y la loss de entrenamiento llegó a 0.0001. Los puntos completos se exportaron desde \code{trainer\_state.json} y quedaron versionados para reproducir la figura. La diferencia entre loss y EX refuerza la decisión de elegir por ejecución.
+La hipótesis de que \code{r=32} mejoraría la exactitud frente a \code{r=16} no se confirmó. Ambos
+obtuvieron 39 de 40 respuestas correctas. Se eligió \code{r=32} por menor latencia p95 después del
+empate. Frente al baseline, el adaptador sí superó ampliamente los criterios de éxito.
 
-\begin{figure}[H]
+\begin{figure}[ht]
 \centering
-\includegraphics[width=\textwidth]{resultados/curvas_loss.png}
-\caption{Curvas reales de entrenamiento y validación exportadas desde los checkpoints finales. El eje vertical usa escala logarítmica. Los valores y hashes de procedencia están versionados en \code{resultados/curvas\_loss.csv} y \code{resultados/curvas\_loss.json}.}
+\includegraphics[width=.82\textwidth]{../resultados/curvas_loss.png}
+\caption{Pérdida de entrenamiento y validación de las dos configuraciones QLoRA. La selección final
+se basa en ejecución y latencia, no únicamente en esta curva.}
 \end{figure}
 
-\subsection{Métrica y reparación}
-
-La EX compara resultados normalizados: redondeo numérico a dos decimales, columnas adicionales permitidas y orden exigido solo cuando el caso lo indica. Las dificultades fácil, media y difícil pesan 1, 2 y 3. Para el ganador se comparó generación directa con una única reparación tras un error real de MySQL.
-
-\section{Resultados}
-
-\begin{table}[H]
-\centering
-\caption{Resultados sobre 40 preguntas y dos esquemas no vistos.}
-\begin{tabular}{@{}lccc@{}}
-\toprule
-Variante&EX ponderada&Tasa ejecutable&Latencia p95\\
-\midrule
-Baseline&3.8\%&62.5\%&6.66 s\\
-QLoRA $r=16$&97.4\%&97.5\%&15.72 s\\
-QLoRA $r=32$&97.4\%&97.5\%&13.20 s\\
-Ganador directo&97.4\%&97.5\%&12.68 s\\
-Ganador + reparación&97.4\%&97.5\%&15.64 s\\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{table}[H]
-\centering
-\caption{EX del ganador directo por dificultad.}
-\begin{tabular}{@{}lccc@{}}
-\toprule
-Dificultad&Fácil&Media&Difícil\\
-\midrule
-EX&100.0\%&92.9\%&100.0\%\\
-\bottomrule
-\end{tabular}
-\end{table}
-
-El ganador resolvió 39 de 40 preguntas. El único fallo fue una entidad inexistente. La taxonomía exigida quedó con estos conteos: sintaxis 0, columna o tabla inexistente 1, \code{JOIN} 0, agregación 0, filtro 0 y resultado distinto 0. La reparación no cambió la EX y añadió latencia, por lo que su utilidad queda limitada a errores de ejecución recuperables, no a correcciones semánticas generales.
-
-La predicción conservadora para la evaluación oculta es 87.4\%, con intervalo estimado de 81.7\% a 90.0\%. Se obtuvo mediante 20,000 remuestras bootstrap por pregunta y una penalización explícita de 10 puntos porcentuales por cambio de dominio. Es una estimación, no una medición del conjunto oculto.
-
-\section{Compatibilidad limpia en Google Colab T4}
-
-La prueba final se ejecutó en un entorno nuevo de Colab con Tesla T4. El notebook \path{notebooks/04_prueba_integral_colab_t4.ipynb} conserva celdas, salidas, versiones y el commit de origen.
-
-\begin{table}[H]
-\centering
-\caption{Evidencia medida en Tesla T4.}
-\begin{tabular}{@{}ll@{}}
-\toprule
-Comprobación&Resultado\\
-\midrule
-Entorno&Tesla T4; CUDA 13.0; PyTorch 2.11.0+cu130\\
-Carga del adapter&42.728 s; 1.438 GB VRAM asignada\\
-Caso fácil&3.442 s; coincidencia con referencia\\
-Caso medio&7.507 s; coincidencia con referencia\\
-Caso difícil&9.461 s; coincidencia con referencia\\
-Callback con reparación&15.225 s; dos llamadas\\
-Carga del baseline&8.091 s; 1.202 GB VRAM asignada\\
-Configuración final&Adapter restaurado y activo\\
-\bottomrule
-\end{tabular}
-\end{table}
-
-El smoke test del baseline verificó carga, determinismo, formato y tiempo; no se usa como sustituto de la medición MySQL de 40 preguntas. El notebook finaliza con \emph{PRUEBA COMPLETA EN T4 APROBADA}.
-
-\section{Reproducción paso a paso}
-
-\subsection{Ruta autosuficiente de Colab}
+\section{Herramientas y arquitectura}
 
 \begin{enumerate}
-\item Abrir el notebook de prueba y seleccionar \emph{T4 GPU}.
-\item Cargar \code{Proyecto-3\_Grupo-1\_DLYSI\_Sec-30-candidato.zip}.
-\item Ejecutar todas las celdas en orden.
-\item Confirmar el SHA-256 del adapter y el mensaje final de aprobación.
+  \item El navegador recibe DDL y pregunta mediante Gradio.
+  \item La capa de entrada valida estructura y tamaño.
+  \item PyTorch, Transformers y PEFT cargan Qwen y QLoRA desde revisiones fijadas.
+  \item \code{sqlglot} normaliza la salida y rechaza escritura o sentencias múltiples.
+  \item La interfaz devuelve SQL, latencia, variante y \code{request\_id}.
+  \item Un log JSONL guarda fecha UTC, estado, latencia, tamaños y categoría de error.
 \end{enumerate}
 
-El ZIP ya contiene el adapter; el modelo base público se descarga automáticamente desde Hugging Face. No se requiere token para la ruta normal de evaluación.
+FastAPI y Next.js se conservan como ruta local. La aplicación pública usa Gradio en Hugging Face
+Spaces. El repositorio genera un bundle mínimo mediante \code{scripts/build\_space\_bundle.py}.
 
-\subsection{Recuperación desde Hugging Face}
+\subsection{Decisiones de despliegue}
 
-El modelo base se encuentra en \url{https://huggingface.co/Qwen/Qwen2.5-Coder-1.5B-Instruct}. El respaldo público del adapter está en \url{https://huggingface.co/Dani0604/proyecto3-text2sql-qlora} y se descarga anónimamente, sin token. La revisión fijada es:
+\begin{tabularx}{\textwidth}{@{}XXX@{}}
+\toprule
+\textbf{Decisión} & \textbf{Razón} & \textbf{Consecuencia}\\
+\midrule
+Gradio público & Menor complejidad y soporte para GPU bajo demanda & Next.js queda como ruta local\\
+Adapter remoto fijado & Evita duplicar un binario de 140.9 MB & Primera carga depende del Hub\\
+Concurrencia uno & Protege memoria y estado del modelo & Menor capacidad simultánea\\
+Logs sin contenido & Reduce exposición de esquemas & Diagnóstico mediante metadatos\\
+\bottomrule
+\end{tabularx}
 
-\begin{center}
-\small\code{24658a4efce8303165906832f0eede2b5c56de84}
-\end{center}
+\section{Evidencias del pase a producción}
 
-Después de descargar, se debe comprobar que \code{adapter\_model.safetensors} tenga SHA-256:
+\begin{tabularx}{\textwidth}{@{}XXl@{}}
+\toprule
+\textbf{Evidencia} & \textbf{Ubicación} & \textbf{Estado}\\
+\midrule
+Suite automatizada & \code{tests/} & 41 pruebas aprobadas\\
+Aplicación pública & README y evidencia de despliegue & Pendiente\\
+Capturas externas & \code{docs/evidencias/capturas/} & Pendiente\\
+Logs anonimizados & \code{docs/evidencias/logs/} & Pendiente\\
+Pruebas de humo & \code{docs/evidencias/pruebas/} & Pendiente\\
+Commit desplegado & \code{docs/evidencias/despliegue.md} & Pendiente\\
+\bottomrule
+\end{tabularx}
 
-\begin{center}
-\small\code{d3126183a092521cb1feffb9424b188552d27bb8fc4b51a8d13a1348d89016f1}
-\end{center}
+La URL, las capturas y los logs solo se marcarán como completados después de verificar el servicio
+desde una sesión externa. La prueba local de la interfaz ya respondió HTTP 200 sin cargar el modelo.
 
-Las instrucciones completas para Colab, Windows, API, Next.js, Docker y recuperación están en \code{README.md}. Las instrucciones de publicación y Git LFS están en \code{docs/PUBLICACION.md}.
+\section{Reproducibilidad y procedencia}
 
-\section{Trazabilidad, riesgos y conclusiones}
+El dataset conserva 2,592 pares sobre 12 esquemas de entrenamiento y 40 preguntas sobre dos
+esquemas inéditos. Los hashes se mantienen en \code{resultados/dataset\_manifest.json}. El adapter
+ganador conserva el SHA-256
+\code{d3126183a092521cb1feffb9424b188552d27bb8fc4b51a8d13a1348d89016f1}.
 
-La entrega incluye configuraciones, adapter, datos, cuatro notebooks, resultados por corrida, revisión humana, bitácora, contribuciones, informe y presentación. MySQL queda fijado en la versión 8.4.10 mediante Docker. La suite automatizada cubre configuración, seguridad SQL, normalización, contrato oficial, API, dataset, auditoría y selección.
+La suite se ejecuta con:
 
-El principal riesgo es el cambio de dominio: dos esquemas de validación no representan toda la variedad posible de la prueba oculta. Otros límites son la dependencia de MySQL, la restricción a lectura y la falta de beneficio observado en la reparación. Por ello se reportan EX por dificultad, fallos concretos y una predicción conservadora, sin presentar estimaciones como mediciones.
+\begin{verbatim}
+python -m pytest -q
+python -m ruff check production.py app.py text2sql tests
+python scripts/build_space_bundle.py
+\end{verbatim}
 
-\begin{resultado}{Conclusión}
-El proyecto satisface la ruta experimental exigida: baseline, dos QLoRA que difieren en un factor, evaluación por ejecución, análisis de error, inferencia con reparación, selección justificada, colaboración documentada y prueba limpia en T4. El adapter $r=32$ es el artefacto final por su menor p95 después del empate en calidad.
-\end{resultado}
+\section{Limitaciones y recomendación}
+
+El principal riesgo es el cambio de dominio. La validación cubre dos esquemas inéditos, pero no la
+diversidad de una organización real. El hardware bajo demanda también puede introducir cola. La
+recomendación es mantener el modelo para consultas supervisadas, conservar la restricción de solo
+lectura, exigir revisión humana y monitorear latencia, errores y dominios nuevos.
 
 \section*{Uso de inteligencia artificial}
 
-OpenAI Codex apoyó el análisis del enunciado, la implementación, las pruebas y la documentación; v0 se utilizó como punto de partida visual. Los integrantes revisaron los artefactos y son responsables de poder explicarlos. Ninguna API externa participa en la generación SQL evaluada.
+OpenAI Codex apoyó el análisis del enunciado, la migración, la implementación, las pruebas y la
+documentación. v0 se utilizó como punto de partida visual de la interfaz del Proyecto 3. Los
+integrantes revisan los cambios y son responsables de explicar el código y las decisiones. Ninguna
+API externa procesa las solicitudes del servicio; la inferencia utiliza el modelo y el adaptador
+abiertos descritos en este documento.
 
 \end{document}
