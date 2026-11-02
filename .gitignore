@@ -215,7 +215,7 @@ tempCodeRunnerFile.py
 node_modules/
 .next/
 *.tsbuildinfo
-logs/
+/logs/
 adapter/*.safetensors
 dist/
 tmp/

@@ -215,6 +215,8 @@ Logs sin contenido & Reduce exposición de esquemas & Diagnóstico mediante meta
 \textbf{Evidencia} & \textbf{Ubicación} & \textbf{Estado}\\
 \midrule
 Suite automatizada & \code{tests/} & 41 pruebas aprobadas\\
+Smoke local RTX 4050 & \code{docs/evidencias/pruebas/} & 65.1 s, 1,472 MB\\
+Evento anonimizado & \code{docs/evidencias/logs/} & Registrado\\
 Aplicación pública & README y evidencia de despliegue & Pendiente\\
 Capturas externas & \code{docs/evidencias/capturas/} & Pendiente\\
 Logs anonimizados & \code{docs/evidencias/logs/} & Pendiente\\
@@ -223,8 +225,9 @@ Commit desplegado & \code{docs/evidencias/despliegue.md} & Pendiente\\
 \bottomrule
 \end{tabularx}
 
-La URL, las capturas y los logs solo se marcarán como completados después de verificar el servicio
-desde una sesión externa. La prueba local de la interfaz ya respondió HTTP 200 sin cargar el modelo.
+La URL y las capturas solo se marcarán como completadas después de verificar el servicio desde una
+sesión externa. La interfaz local respondió HTTP 200 y una inferencia real produjo SQL correcto en
+65.1 s, incluida la primera carga, con un pico de 1,472 MB de VRAM asignada.
 
 \section{Reproducibilidad y procedencia}
 

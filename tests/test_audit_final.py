@@ -20,5 +20,5 @@ def test_public_evidence_remains_pending_until_real_deployment() -> None:
     checks = collect_checks(ROOT)
     assert not checks["deployment_recorded"]
     assert not checks["screenshots_recorded"]
-    assert not checks["logs_recorded"]
-    assert not checks["smoke_tests_recorded"]
+    assert checks["logs_recorded"]
+    assert checks["smoke_tests_recorded"]

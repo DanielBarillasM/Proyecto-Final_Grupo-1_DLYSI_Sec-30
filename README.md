@@ -158,6 +158,8 @@ completado antes de probarlo desde fuera del equipo.
 | Aplicación pública | Pendiente de despliegue | Se añadirá la URL verificada |
 | Pruebas unitarias y de seguridad | 41 aprobadas | `tests/` |
 | Logs sin datos de usuario | Implementado localmente | `logs/usage.jsonl` (no versionado) |
+| Smoke test local con RTX 4050 | Aprobado, 65.1 s en primera carga | `docs/evidencias/pruebas/` |
+| Evento anonimizado local | Registrado | `docs/evidencias/logs/` |
 | Capturas de uso real | Pendiente | `docs/evidencias/capturas/` |
 | Muestra anonimizada de eventos | Pendiente | `docs/evidencias/logs/` |
 | Pruebas de humo del servicio | Pendiente | `docs/evidencias/pruebas/` |
