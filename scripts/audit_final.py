@@ -24,7 +24,6 @@ REQUIRED_FILES = (
     "resultados/dataset_manifest.json",
     "resultados/resumen.json",
     "adapter/registry.json",
-    "docs/HANDOFF_WILSON.md",
     "requirements-demo.txt",
     "scripts/demo/start_demo.ps1",
     "scripts/demo/stop_demo.ps1",
@@ -98,7 +97,6 @@ def collect_checks(root: Path = ROOT) -> dict[str, bool]:
         "smoke_tests_recorded": _has_files(
             root / "docs" / "evidencias" / "pruebas", ("*.md", "*.json", "*.txt")
         ),
-        "handoff_ready": (root / "docs" / "HANDOFF_WILSON.md").is_file(),
         "demo_scripts_ready": all(
             (root / "scripts" / "demo" / name).is_file()
             for name in ("start_demo.ps1", "stop_demo.ps1", "verify_demo.ps1")

@@ -217,6 +217,7 @@ node_modules/
 *.tsbuildinfo
 /logs/
 .demo-run/
+/docs/HANDOFF_WILSON.md
 adapter/*.safetensors
 dist/
 tmp/

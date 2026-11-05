@@ -235,8 +235,8 @@ python scripts\audit_final.py --final
 ```
 
 El comando exige código, datos congelados, adaptador fijado, presentación e informe PDF, URL,
-capturas, logs y pruebas de humo. El handoff de revisión independiente está en
-[`docs/HANDOFF_WILSON.md`](docs/HANDOFF_WILSON.md).
+capturas, logs y pruebas de humo. La revisión independiente de Wilson se entrega por separado y no
+forma parte del repositorio público.
 
 ### API y aplicación Next.js heredadas
 
