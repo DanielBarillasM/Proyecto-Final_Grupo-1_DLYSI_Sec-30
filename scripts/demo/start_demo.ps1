@@ -112,7 +112,7 @@ try {
         -WorkingDirectory $RepoRoot -WindowStyle Hidden -PassThru `
         -RedirectStandardOutput (Join-Path $RunDirectory "frontend.stdout.log") `
         -RedirectStandardError (Join-Path $RunDirectory "frontend.stderr.log")
-    Wait-HttpOk -Uri "http://127.0.0.1:7860"
+    Wait-HttpOk -Uri "http://127.0.0.1:7860" -TimeoutSeconds 300
     $frontendConnection = Get-NetTCPConnection -State Listen -LocalPort 7860 |
         Select-Object -First 1
     $frontendServer = Get-Process -Id $frontendConnection.OwningProcess
