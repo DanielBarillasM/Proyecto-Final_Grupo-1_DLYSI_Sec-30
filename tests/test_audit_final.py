@@ -22,3 +22,9 @@ def test_public_evidence_remains_pending_until_real_deployment() -> None:
     assert not checks["screenshots_recorded"]
     assert checks["logs_recorded"]
     assert checks["smoke_tests_recorded"]
+
+
+def test_handoff_package_is_ready() -> None:
+    checks = collect_checks(ROOT)
+    assert checks["handoff_ready"]
+    assert checks["demo_scripts_ready"]

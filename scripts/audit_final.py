@@ -21,6 +21,11 @@ REQUIRED_FILES = (
     "resultados/dataset_manifest.json",
     "resultados/resumen.json",
     "adapter/registry.json",
+    "docs/HANDOFF_WILSON.md",
+    "requirements-demo.txt",
+    "scripts/demo/start_demo.ps1",
+    "scripts/demo/stop_demo.ps1",
+    "scripts/demo/verify_demo.ps1",
 )
 README_SECTIONS = (
     "## 1. Problemática",
@@ -84,16 +89,19 @@ def collect_checks(root: Path = ROOT) -> dict[str, bool]:
         "smoke_tests_recorded": _has_files(
             root / "docs" / "evidencias" / "pruebas", ("*.md", "*.json", "*.txt")
         ),
+        "handoff_ready": (root / "docs" / "HANDOFF_WILSON.md").is_file(),
+        "demo_scripts_ready": all(
+            (root / "scripts" / "demo" / name).is_file()
+            for name in ("start_demo.ps1", "stop_demo.ps1", "verify_demo.ps1")
+        ),
     }
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Audita la entrega del Proyecto Final.")
-    parser.add_argument(
-        "--final",
-        action="store_true",
-        help="Exige evidencia del servicio público.",
-    )
+    modes = parser.add_mutually_exclusive_group()
+    modes.add_argument("--handoff", action="store_true", help="Exige el paquete técnico al 90%.")
+    modes.add_argument("--final", action="store_true", help="Exige evidencia del servicio público.")
     args = parser.parse_args()
     checks = collect_checks()
     preparation = {
@@ -105,10 +113,12 @@ def main() -> None:
         "adapter_is_enabled",
         "presentation_is_pdf",
     }
-    required = set(checks) if args.final else preparation
+    handoff = set(checks) - {"deployment_recorded", "screenshots_recorded"}
+    required = set(checks) if args.final else handoff if args.handoff else preparation
+    mode = "final" if args.final else "handoff" if args.handoff else "preparation"
     print(
         json.dumps(
-            {"mode": "final" if args.final else "preparation", "checks": checks},
+            {"mode": mode, "checks": checks},
             indent=2,
             ensure_ascii=False,
         )

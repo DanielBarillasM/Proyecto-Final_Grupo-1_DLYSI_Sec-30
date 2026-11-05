@@ -216,6 +216,7 @@ node_modules/
 .next/
 *.tsbuildinfo
 /logs/
+.demo-run/
 adapter/*.safetensors
 dist/
 tmp/
