@@ -22,27 +22,35 @@ política de la plataforma.
 |---|---:|---:|---|---|
 | Hugging Face ZeroGPU | Gratis al cumplir 30 días | Sí | Estable | Bloqueado temporalmente |
 | Hugging Face PRO | USD 9/mes | ZeroGPU con mayor cuota | Estable | Requiere decisión de pago |
-| Gradio `share=True` | Gratis | RTX 4050 local | Solo mientras corre | Recomendado para demo inmediata |
-| Cloudflare Quick Tunnel | Gratis | RTX 4050 local | Solo mientras corre | Alternativa de contingencia |
+| Gradio `share=True` | Gratis | RTX 4050 local | Solo mientras corre | Bloqueado por inspección HTTPS local |
+| Cloudflare Quick Tunnel | Gratis | RTX 4050 local | Solo mientras corre | Seleccionado y verificado |
 | Proveedor GPU serverless | Variable | Sí | Estable | Requiere método de pago |
 
-## Modo de demostración pública temporal
+## Demostración pública verificada
 
-La aplicación solo solicita un enlace público cuando se establece explícitamente:
+El 5 de noviembre de 2026 se desplegó el commit
+`0e304a20f41ed216ae66bc4e535d4a75366cf3a8` mediante Next.js, FastAPI y Cloudflare. La URL temporal
+respondió HTTP 200 y se cerró al terminar la prueba.
 
 ```powershell
-$env:GRADIO_SHARE = "true"
-.\.venv\Scripts\python.exe app.py
+.\scripts\demo\start_demo.ps1
+.\scripts\demo\verify_demo.ps1 -RunInference
+.\scripts\demo\stop_demo.ps1
 ```
 
-Sin esa variable, la aplicación permanece únicamente en `127.0.0.1`. El enlace temporal termina
-al cerrar el proceso. Durante la demostración se deben aplicar estas condiciones:
+El frontend público escucha solo en `127.0.0.1:3000`; FastAPI permanece en `127.0.0.1:8000` y nunca
+se publica directamente. Durante cada demostración se aplican estas condiciones:
 
 - usar únicamente esquemas sintéticos;
 - no pegar credenciales, datos personales ni DDL confidencial;
 - mantener una sola generación simultánea;
 - registrar request ID y latencia de los casos demostrados;
 - cerrar el proceso y verificar que el enlace deje de responder al finalizar.
+
+No se añadió una exclusión a Kaspersky. El equipo descartó el túnel nativo de Gradio después de dos
+fallos de conexión y conservó intacta la inspección HTTPS. `cloudflared.exe` tenía firma válida y la
+huella SHA-256 registrada durante la prueba fue
+`2493dbc168923bb3e59e5e7716f71deced92992eea9acd6e9d74f84ac7751343`.
 
 ## Ruta permanente
 

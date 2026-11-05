@@ -1,56 +1,47 @@
-# Handoff final para Wilson
+# Auditoría independiente para Wilson y su agente
 
-## Alcance
+## Única tarea
 
-El código, las pruebas, la aplicación, la automatización de demostración, la evidencia, el README,
-la arquitectura y la presentación quedan cerrados por Pablo. Wilson y su agente no necesitan
-implementar, corregir ni volver a desplegar código. Su único trabajo pendiente es terminar el
-informe en LaTeX y compilarlo.
+El proyecto ya está implementado, documentado, compilado y probado. Wilson y su agente deben hacer
+una última revisión independiente sin modificar código, datos, documentos ni artefactos.
 
-## Estado recibido
+El único archivo que deben crear es `AUDITORIA_WILSON.md` en la raíz del repositorio.
 
-- Suite automatizada aprobada: 43 pruebas.
-- Ruff aprobado para el código de producción y sus pruebas.
-- Build de Next.js aprobado con Next.js 16.4.3.
-- Bundle de Hugging Face generado con 16 archivos y sin datos, pesos ni secretos.
-- Auditoría `--handoff` aprobada.
-- Inferencia real local aprobada en RTX 4050.
-- Presentación HTML y PDF disponibles.
-- Evidencia pública documentada y auditoría final aprobada.
-- Informe fuente disponible en `informe/main.tex`; su revisión y compilación final quedan delegadas.
+El PDF oficial de instrucciones se adjunta en
+`docs/Proyecto_Final_Modelo_en_Produccion.pdf`. La revisión debe contrastar el repositorio contra
+ese documento, no solo contra esta lista. Como referencia adicional, Pablo dejó su propia matriz en
+`docs/AUDITORIA_FINAL_REQUISITOS.md`.
 
-## Única tarea: terminar y compilar el informe
+## Contenido del Markdown
 
-Revisar `informe/main.tex` y actualizar únicamente los resultados finales:
+El informe de auditoría debe incluir:
 
-- cambiar el conteo de pruebas a 43;
-- describir FastAPI local, Gradio como puerta pública y Cloudflare Quick Tunnel como transporte;
-- copiar del README y `docs/evidencias/despliegue.md` la URL, fecha, commit, latencias y capturas;
-- indicar que la auditoría final aprobó todos los controles;
-- mantener la declaración de uso de inteligencia artificial;
-- conservar las métricas del Proyecto 3 sin recalcularlas.
+1. fecha, nombre del auditor y commit revisado;
+2. lista breve de elementos correctos;
+3. lista de problemas encontrados, si existe alguno;
+4. comandos ejecutados y su resultado;
+5. conclusión: `aprobado`, `aprobado con observaciones` o `requiere corrección`.
 
-Compilar hasta que no existan errores y revisar visualmente todas las páginas. El PDF final debe
-quedar en la raíz como `informe.pdf`. No modificar `resultados/`, `datos/`, `adapter/registry.json`
-ni `config.json`.
+Si no encuentran problemas, deben indicarlo explícitamente. No deben inventar observaciones para
+llenar la sección.
 
-## Cierre del informe
-
-Ejecutar:
+## Comandos mínimos
 
 ```powershell
+python -m pytest -q
+python -m ruff check production.py app.py backend text2sql tests scripts\audit_final.py scripts\build_space_bundle.py
+pnpm.cmd --dir web build
 python scripts\audit_final.py --final
 git status --short
 ```
 
-La auditoría ya debe terminar con código 0 antes de editar el informe. Después de compilarlo, crear
-un commit que contenga únicamente `informe/main.tex` e `informe.pdf`. Un mensaje sugerido es
-`docs: compilar informe final`.
+También deben abrir y revisar visualmente `README.md`, `informe.pdf` y `presentacion.pdf`, y comprobar
+que los enlaces locales a evidencia existen.
 
-## Qué no debe hacer Wilson
+## Límites
 
-- No reentrenar el modelo.
-- No cambiar hiperparámetros ni métricas.
-- No subir `adapter_model.safetensors` a GitHub.
-- No registrar preguntas, DDL reales, credenciales o información personal.
-- No atribuir evidencia a una prueba que no se haya ejecutado.
+- No editar archivos existentes.
+- No reentrenar ni volver a desplegar el modelo.
+- No actualizar dependencias.
+- No corregir directamente un hallazgo; documentarlo en `AUDITORIA_WILSON.md`.
+- No subir pesos, cachés, logs privados o archivos de `.demo-run/`.

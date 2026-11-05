@@ -10,16 +10,16 @@ y añade una interfaz pública, controles de entrada, telemetría y evidencia op
   <code>MySQL 8.4</code> · <code>Gradio</code> · <code>FastAPI</code> · <code>Next.js</code>
 </div>
 
-> **Estado al 2 de noviembre de 2026:** migración reproducible y aplicación de producción en
-> desarrollo. La URL pública todavía no se declara como evidencia hasta completar y verificar el
-> despliegue.
+> **Estado al 5 de noviembre de 2026:** entrega técnica completa. La aplicación pública temporal,
+> tres inferencias reales, los controles de seguridad y el cierre del túnel quedaron documentados.
+> Wilson y su agente solo realizarán una auditoría independiente en Markdown, sin editar el proyecto.
 
 ## Vista rápida
 
 | Datos congelados | Calidad | Servicio | Verificación local |
 |---:|---:|---|---:|
-| 2,592 pares · 12 esquemas | 97.4% EX ponderada | Gradio + GPU bajo demanda | 41 pruebas aprobadas |
-| 40 preguntas · 2 esquemas inéditos | 39/40 correctas | SQL de solo lectura | HTTP 200 en localhost |
+| 2,592 pares · 12 esquemas | 97.4% EX ponderada | Next.js + FastAPI + RTX 4050 | 43 pruebas aprobadas |
+| 40 preguntas · 2 esquemas inéditos | 39/40 correctas | SQL de solo lectura | HTTP 200 público verificado |
 
 **Navegación:** [problema](#1-problemática) · [plan](#2-planificación) ·
 [modelo](#4-modelo-planteado) · [validación](#5-validación-de-hipótesis) ·
@@ -31,8 +31,8 @@ y añade una interfaz pública, controles de entrada, telemetría y evidencia op
 - Wilson Alejandro Calderón Argueta — 22018.
 - Pablo Daniel Barillas Moreno — 22193.
 
-El enunciado del Proyecto Final indica modalidad de tríos. La composición definitiva del equipo
-debe confirmarse antes de congelar la portada y el reparto de la presentación.
+El repositorio heredado del Proyecto 3 identifica a estos dos integrantes. El enunciado general del
+Proyecto Final menciona tríos; no se añadió un tercer integrante ficticio ni se le atribuyó trabajo.
 
 ## 1. Problemática
 
@@ -48,16 +48,16 @@ sí solo que una consulta semánticamente válida responda la intención del usu
 ## 2. Planificación
 
 El plan completo se mantiene en [`docs/PLAN_PROYECTO_FINAL.md`](docs/PLAN_PROYECTO_FINAL.md). La
-versión lista para presentación debe quedar congelada el **9 de noviembre**; la entrega definitiva
-es el **15 de noviembre de 2026 a las 23:59**.
+versión técnica quedó cerrada el **5 de noviembre**. Se mantiene el **9 de noviembre** como fecha de
+congelamiento para exposición y el **15 de noviembre de 2026 a las 23:59** como entrega definitiva.
 
 | Etapa | Fecha objetivo | Resultado |
 |---|---:|---|
 | Migración y trazabilidad | 2–3 nov | Código, datos y hashes del Proyecto 3 verificados |
 | Aplicación y controles | 4 nov | Flujo web, SQL seguro y telemetría privada |
-| Despliegue | 5–6 nov | URL pública y prueba desde una sesión externa |
-| Evidencia y documentación | 6–7 nov | Logs, capturas, pruebas y siete secciones del README |
-| Presentación y ensayo | 8 nov | PDF, demostración y ensayo de 10 minutos |
+| Despliegue | 5 nov | HTTP 200 público, tres casos sintéticos y cierre verificado |
+| Evidencia y documentación | 5 nov | Logs, capturas, pruebas y siete secciones del README |
+| Presentación e informe | 5 nov | PDF de presentación e informe compilado |
 | Congelamiento | 9 nov | Release candidata lista para el sorteo |
 | Ajustes finales | 10–15 nov | Correcciones sin cambiar el alcance experimental |
 
@@ -85,7 +85,7 @@ y fijado a la revisión indicada en `config.json`.
 No se reentrena el modelo para este proyecto. Los cambios se concentran en producción:
 
 - recuperación del adaptador desde Hugging Face cuando no hay pesos locales;
-- interfaz Gradio compatible con GPU bajo demanda;
+- interfaz Next.js pública mediante túnel temporal y Gradio preparado para Hugging Face Spaces;
 - validación de tamaño y estructura de entradas;
 - guardia que acepta únicamente `SELECT` o `WITH ... SELECT`;
 - respuesta con identificador, variante y latencia;
@@ -115,8 +115,10 @@ conservan en [`docs/PLAN_PROYECTO_3.md`](docs/PLAN_PROYECTO_3.md).
 
 ```mermaid
 flowchart LR
-    U[Usuario] --> W[Aplicación Gradio]
-    W --> V[Validación de entrada]
+    U[Usuario] --> C[Cloudflare Quick Tunnel]
+    C --> W[Next.js]
+    W --> A[FastAPI local]
+    A --> V[Validación de entrada]
     V --> M[Qwen 1.5B + QLoRA r=32]
     M --> S[Guardia SQL de solo lectura]
     S --> R[SQL + latencia + request ID]
@@ -130,8 +132,9 @@ flowchart LR
 |---|---|
 | Datos y evaluación | JSONL, MySQL 8.4, pandas, notebooks |
 | Modelo | PyTorch, Transformers, PEFT, bitsandbytes, QLoRA |
-| Servicio local | FastAPI y Next.js heredados del Proyecto 3 |
-| Servicio público | Gradio y Hugging Face Spaces/ZeroGPU |
+| Servicio y UI | FastAPI, Next.js y Gradio |
+| Acceso público verificado | Cloudflare Quick Tunnel sobre la RTX 4050 local |
+| Ruta permanente preparada | Bundle Gradio para Hugging Face Spaces/ZeroGPU |
 | Seguridad | sqlglot, sentencia única, lista de operaciones de lectura |
 | Calidad | pytest, Ruff, pruebas de contrato y auditoría |
 | Observabilidad | JSON Lines con request ID, latencia, estado y categoría de error |
@@ -143,27 +146,28 @@ La descripción ampliada está en [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.md)
 | Decisión | Razón | Consecuencia aceptada |
 |---|---|---|
 | Reutilizar el modelo del Proyecto 3 | El objetivo pide producción, no un modelo nuevo | El esfuerzo se concentra en servicio y evidencia |
-| Publicar Gradio como interfaz principal | Reduce piezas operativas y funciona con ZeroGPU | FastAPI y Next.js quedan como ruta local |
+| Publicar Next.js mediante túnel para la prueba | Reutiliza la UI validada y evita alterar el entorno CUDA | La URL cambia en cada demostración |
+| Conservar Gradio para Spaces | Mantiene una ruta compatible con ZeroGPU | El Space espera elegibilidad de la cuenta |
 | Descargar el adaptador fijado | Evita duplicar 140.9 MB en GitHub | La primera carga depende de Hugging Face |
 | Procesar una solicitud a la vez | Protege memoria y estado del runtime | Menor concurrencia, adecuada para la demostración |
 | Omitir texto en telemetría | Reduce exposición de esquemas potencialmente sensibles | El diagnóstico usa tamaños, estado y request ID |
 
 ## 7. Evidencias del pase a producción
 
-Esta sección distingue evidencia real de trabajo pendiente. Ningún enlace o captura se marcará como
-completado antes de probarlo desde fuera del equipo.
+Toda evidencia marcada como completa proviene de la ejecución real del 5 de noviembre de 2026. La
+URL fue temporal y se cerró después de la prueba, como exige el procedimiento de seguridad.
 
 | Evidencia | Estado | Ubicación |
 |---|---|---|
-| Aplicación pública | Pendiente de despliegue | Se añadirá la URL verificada |
-| Pruebas unitarias y de seguridad | 41 aprobadas | `tests/` |
+| Aplicación pública temporal | Verificada, HTTP 200 | `docs/evidencias/despliegue.md` |
+| Pruebas unitarias y de seguridad | 43 aprobadas | `tests/` |
 | Logs sin datos de usuario | Implementado localmente | `logs/usage.jsonl` (no versionado) |
 | Smoke test local con RTX 4050 | Aprobado, 65.1 s en primera carga | `docs/evidencias/pruebas/` |
 | Evento anonimizado local | Registrado | `docs/evidencias/logs/` |
-| Capturas de uso real | Pendiente | `docs/evidencias/capturas/` |
-| Muestra anonimizada de eventos | Pendiente | `docs/evidencias/logs/` |
-| Pruebas de humo del servicio | Pendiente | `docs/evidencias/pruebas/` |
-| Commit y release desplegados | Pendiente | Se registrarán tras el despliegue |
+| Capturas de uso real | Registradas y revisadas | `docs/evidencias/capturas/` |
+| Resultados sintéticos | 3/3 correctos | `docs/evidencias/pruebas/` |
+| Controles destructivos | 2/2 rechazados con HTTP 422 | `docs/evidencias/pruebas/` |
+| Commit desplegado | `0e304a20...66cf3a8` | `docs/evidencias/despliegue.md` |
 
 ## Ejecución
 
@@ -197,35 +201,46 @@ Abra `http://127.0.0.1:7860`. La aplicación usa `config.json`; `usar_adapter` d
 El comando crea `dist/huggingface-space/` con únicamente el runtime, la interfaz, la configuración,
 los metadatos del adaptador y las dependencias. No incluye pesos, notebooks ni datos de entrenamiento.
 
-### Despliegue público
+### Demostración pública reproducible
 
-El Space ZeroGPU permanente se encuentra temporalmente bloqueado porque la cuenta de Hugging Face
-tiene menos de 30 días. La decisión y las alternativas se documentan en
-[`docs/DECISIONES_DESPLIEGUE.md`](docs/DECISIONES_DESPLIEGUE.md).
-
-Para una demostración temporal con la RTX 4050 local:
+El Space ZeroGPU permanente sigue bloqueado por la antigüedad de la cuenta. La demostración usa
+Next.js, FastAPI y Cloudflare con la RTX 4050 local:
 
 ```powershell
-$env:GRADIO_SHARE = "true"
-.\.venv\Scripts\python.exe app.py
+.\scripts\demo\start_demo.ps1
+.\scripts\demo\verify_demo.ps1 -RunInference
+.\scripts\demo\stop_demo.ps1
 ```
 
-Gradio genera una URL pública aleatoria mientras el proceso permanece abierto. Sin
-`GRADIO_SHARE=true`, la aplicación sigue siendo local. El modo público debe utilizar únicamente
-esquemas sintéticos y cerrarse al terminar la demostración.
+El primer comando imprime una URL `trycloudflare.com` y registra el commit exacto. El segundo valida
+HTTP público, tres inferencias y dos rechazos de seguridad. El tercero detiene únicamente los PID
+registrados y verifica que los puertos queden libres. Solo se permiten esquemas sintéticos.
+
+La ejecución verificada produjo 43.0 s en carga fría, 3.0 s en el caso medio y 8.0 s en el difícil.
+La URL histórica y las capturas están en [`docs/evidencias/despliegue.md`](docs/evidencias/despliegue.md).
 
 ### Guion de demostración
 
-1. Abrir la URL pública desde una sesión externa.
+1. Abrir la nueva URL pública que imprime el script.
 2. Confirmar que el ejemplo contiene dos tablas relacionadas.
 3. Ejecutar una pregunta fácil, una media y una difícil.
 4. Relacionar cada captura con su `request_id` y evento anonimizado.
 5. Mostrar que una salida `DELETE` o una sentencia múltiple se rechaza en las pruebas.
 6. Cerrar con las limitaciones y la recomendación de uso supervisado.
 
+### Auditoría final
+
+```powershell
+python scripts\audit_final.py --final
+```
+
+El comando exige código, datos congelados, adaptador fijado, presentación e informe PDF, URL,
+capturas, logs y pruebas de humo. El handoff de revisión independiente está en
+[`docs/HANDOFF_WILSON.md`](docs/HANDOFF_WILSON.md).
+
 ### API y aplicación Next.js heredadas
 
-La ruta FastAPI + Next.js se mantiene para desarrollo local. Las instrucciones están en
+La ruta FastAPI + Next.js sirve tanto para desarrollo local como para la demostración. Las instrucciones están en
 [`web/README.md`](web/README.md) y la API expone `/health`, `/api/generate` y `/api/validate-sql`.
 
 ## Reproducibilidad y procedencia

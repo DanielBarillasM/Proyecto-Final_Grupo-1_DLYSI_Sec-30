@@ -10,7 +10,7 @@
 \usepackage{hyperref}
 \usepackage{enumitem}
 \usepackage[most]{tcolorbox}
-\usepackage{microtype}
+\usepackage[protrusion=true,expansion=false]{microtype}
 
 \geometry{margin=2.2cm}
 \definecolor{ink}{HTML}{14282B}
@@ -36,7 +36,7 @@
   boxrule=.7pt,
   arc=1mm,
   title=\textbf{#1},
-  coltitle=ink
+  coltitle=white
 }
 
 \begin{document}
@@ -90,7 +90,9 @@ ejecución, frente a 3.8\% del modelo base.
 
 El Proyecto Final no presenta un modelo nuevo ni repite el entrenamiento. El trabajo se concentra
 en la ruta de producción: interfaz pública, recuperación reproducible del adaptador, límites de
-entrada, rechazo de SQL destructivo, control de concurrencia y telemetría sin guardar contenido.
+entrada, rechazo de SQL destructivo, control de concurrencia y telemetría sin guardar contenido. El
+5 de noviembre de 2026 la aplicación respondió HTTP 200 mediante un túnel temporal, produjo tres
+consultas correctas y cerró todos sus procesos después de reunir la evidencia.
 
 \section{Problemática}
 
@@ -112,17 +114,18 @@ lo que el usuario debe revisarla antes de ejecutarla.
 \midrule
 2--3 nov & Migración y trazabilidad & Código, datos y hashes verificados\\
 4 nov & Aplicación y controles & Flujo local, guardia SQL y telemetría\\
-5--6 nov & Despliegue & URL pública probada desde otra sesión\\
-7 nov & Evidencias y documentación & README con siete secciones y pruebas\\
-8 nov & Presentación & PDF de nueve diapositivas y ensayo\\
+5 nov & Despliegue & HTTP 200 público, tres casos y cierre verificado\\
+5 nov & Evidencias y documentación & README con siete secciones y capturas\\
+5 nov & Presentación & PDF de diez diapositivas y ensayo\\
 9 nov & Congelamiento & Release candidata y contingencia local\\
 10--15 nov & Ajustes & Correcciones sin alterar el experimento\\
 \bottomrule
 \end{tabularx}
 
-Wilson mantiene la trazabilidad de datos y modelo. Pablo mantiene el runtime, la interfaz y el
-despliegue. Ambos revisan pruebas, documentación, evidencias y presentación. El enunciado indica
-modalidad de tríos; la composición debe confirmarse antes de cerrar la portada y el reparto oral.
+Pablo mantiene el runtime, la interfaz, el despliegue, las pruebas y la documentación. Wilson y su
+agente realizan una auditoría independiente cuyo único producto es \code{AUDITORIA\_WILSON.md}.
+Ambos integrantes preparan la exposición oral. El repositorio heredado identifica dos integrantes;
+no se añadió una tercera persona ficticia.
 
 \section{Supuestos}
 
@@ -130,7 +133,7 @@ modalidad de tríos; la composición debe confirmarse antes de cerrar la portada
   \item El usuario proporciona un DDL con al menos una sentencia \code{CREATE TABLE}.
   \item La pregunta está en español y se refiere a entidades presentes en el esquema.
   \item El dialecto objetivo es MySQL 8.4 y la salida debe ser una sola consulta de lectura.
-  \item El proveedor asigna GPU bajo demanda; la primera solicitud puede tener cola o arranque en frío.
+  \item La demostración usa una RTX 4050 local; la primera solicitud incluye la carga del modelo.
   \item El servicio procesa una generación a la vez para proteger el runtime.
   \item Los datos sintéticos y dos esquemas inéditos no representan todos los dominios reales.
 \end{itemize}
@@ -146,7 +149,7 @@ La adaptación de producción introduce los siguientes cambios:
 
 \begin{itemize}
   \item descarga del adaptador desde Hugging Face cuando no existen pesos locales;
-  \item interfaz Gradio compatible con GPU bajo demanda;
+  \item interfaz Next.js publicada mediante Cloudflare y Gradio preparado para Spaces;
   \item validación de longitudes y presencia de \code{CREATE TABLE};
   \item guardia que acepta únicamente \code{SELECT} o \code{WITH ... SELECT};
   \item respuesta con latencia, variante e identificador de solicitud;
@@ -181,19 +184,21 @@ empate. Frente al baseline, el adaptador sí superó ampliamente los criterios d
 se basa en ejecución y latencia, no únicamente en esta curva.}
 \end{figure}
 
+\clearpage
 \section{Herramientas y arquitectura}
 
 \begin{enumerate}
-  \item El navegador recibe DDL y pregunta mediante Gradio.
-  \item La capa de entrada valida estructura y tamaño.
+  \item Cloudflare reenvía la URL temporal a Next.js en \code{127.0.0.1:3000}.
+  \item Next.js usa un proxy restringido hacia FastAPI en \code{127.0.0.1:8000}.
+  \item La API valida estructura y tamaño antes de solicitar inferencia.
   \item PyTorch, Transformers y PEFT cargan Qwen y QLoRA desde revisiones fijadas.
   \item \code{sqlglot} normaliza la salida y rechaza escritura o sentencias múltiples.
-  \item La interfaz devuelve SQL, latencia, variante y \code{request\_id}.
   \item Un log JSONL guarda fecha UTC, estado, latencia, tamaños y categoría de error.
 \end{enumerate}
 
-FastAPI y Next.js se conservan como ruta local. La aplicación pública usa Gradio en Hugging Face
-Spaces. El repositorio genera un bundle mínimo mediante \code{scripts/build\_space\_bundle.py}.
+FastAPI y Next.js forman la ruta pública temporal verificada. Gradio se conserva en el bundle mínimo
+generado por \code{scripts/build\_space\_bundle.py} para un futuro Space ZeroGPU. La cuenta de
+Hugging Face todavía no cumple la antigüedad mínima, por lo que no se simuló un despliegue permanente.
 
 \subsection{Decisiones de despliegue}
 
@@ -201,7 +206,8 @@ Spaces. El repositorio genera un bundle mínimo mediante \code{scripts/build\_sp
 \toprule
 \textbf{Decisión} & \textbf{Razón} & \textbf{Consecuencia}\\
 \midrule
-Gradio público & Menor complejidad y soporte para GPU bajo demanda & Next.js queda como ruta local\\
+Next.js + Cloudflare & UI validada y túnel sin alterar el entorno CUDA & URL temporal por ejecución\\
+Gradio para Spaces & Bundle compatible con ZeroGPU & Espera elegibilidad de la cuenta\\
 Adapter remoto fijado & Evita duplicar un binario de 140.9 MB & Primera carga depende del Hub\\
 Concurrencia uno & Protege memoria y estado del modelo & Menor capacidad simultánea\\
 Logs sin contenido & Reduce exposición de esquemas & Diagnóstico mediante metadatos\\
@@ -214,20 +220,21 @@ Logs sin contenido & Reduce exposición de esquemas & Diagnóstico mediante meta
 \toprule
 \textbf{Evidencia} & \textbf{Ubicación} & \textbf{Estado}\\
 \midrule
-Suite automatizada & \code{tests/} & 41 pruebas aprobadas\\
+Suite automatizada & \code{tests/} & 43 pruebas aprobadas\\
 Smoke local RTX 4050 & \code{docs/evidencias/pruebas/} & 65.1 s, 1,472 MB\\
 Evento anonimizado & \code{docs/evidencias/logs/} & Registrado\\
-Aplicación pública & README y evidencia de despliegue & Pendiente\\
-Capturas externas & \code{docs/evidencias/capturas/} & Pendiente\\
-Logs anonimizados & \code{docs/evidencias/logs/} & Pendiente\\
-Pruebas de humo & \code{docs/evidencias/pruebas/} & Pendiente\\
-Commit desplegado & \code{docs/evidencias/despliegue.md} & Pendiente\\
+Aplicación pública & \code{docs/evidencias/despliegue.md} & HTTP 200 verificado\\
+Capturas & \code{docs/evidencias/capturas/} & Dos imágenes revisadas\\
+Resultados sintéticos & \code{docs/evidencias/pruebas/} & 3 de 3 correctos\\
+Controles destructivos & \code{docs/evidencias/pruebas/} & 2 de 2 rechazados\\
+Commit desplegado & \code{docs/evidencias/despliegue.md} & \code{0e304a20...66cf3a8}\\
 \bottomrule
 \end{tabularx}
 
-La URL y las capturas solo se marcarán como completadas después de verificar el servicio desde una
-sesión externa. La interfaz local respondió HTTP 200 y una inferencia real produjo SQL correcto en
-65.1 s, incluida la primera carga, con un pico de 1,472 MB de VRAM asignada.
+La URL temporal \url{https://bytes-aside-abraham-troy.trycloudflare.com} respondió HTTP 200. El caso
+fácil tardó 43.039 s con carga fría; los casos medio y difícil tardaron 3.014 s y 8.030 s. La API
+rechazó \code{DELETE} y una sentencia múltiple con HTTP 422. El túnel operó de 16:13 a 16:17, hora
+de Guatemala, y luego se verificó que los puertos de la demostración quedaran libres.
 
 \section{Reproducibilidad y procedencia}
 
@@ -241,7 +248,9 @@ La suite se ejecuta con:
 \begin{verbatim}
 python -m pytest -q
 python -m ruff check production.py app.py text2sql tests
+pnpm.cmd --dir web build
 python scripts/build_space_bundle.py
+python scripts/audit_final.py --final
 \end{verbatim}
 
 \section{Limitaciones y recomendación}
@@ -252,6 +261,8 @@ recomendación es mantener el modelo para consultas supervisadas, conservar la r
 lectura, exigir revisión humana y monitorear latencia, errores y dominios nuevos.
 
 \section*{Uso de inteligencia artificial}
+
+\enlargethispage{3\baselineskip}
 
 OpenAI Codex apoyó el análisis del enunciado, la migración, la implementación, las pruebas y la
 documentación. v0 se utilizó como punto de partida visual de la interfaz del Proyecto 3. Los

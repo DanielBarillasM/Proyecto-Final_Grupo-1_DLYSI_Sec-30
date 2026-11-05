@@ -1,0 +1,37 @@
+{
+  "verified_at_utc": "2026-11-05T22:14:28.8475901Z",
+  "commit": "0e304a20f41ed216ae66bc4e535d4a75366cf3a8",
+  "public_url": "https://bytes-aside-abraham-troy.trycloudflare.com",
+  "public_http_status": 200,
+  "backend": {
+    "status": "ok",
+    "mode": "model",
+    "adapter_ready": true,
+    "adapter_source": "local"
+  },
+  "unsafe_sql_rejections": [
+    {"case": "delete", "rejected": true, "status": 422},
+    {"case": "multiple", "rejected": true, "status": 422}
+  ],
+  "synthetic_inferences": [
+    {
+      "case": "facil",
+      "sql": "SELECT nombre, ciudad FROM clientes ORDER BY nombre;",
+      "latency_ms": 43039,
+      "variant": "qlora"
+    },
+    {
+      "case": "media",
+      "sql": "SELECT m.`nombre` FROM clientes AS m LEFT JOIN pedidos AS e ON e.cliente_id = m.id WHERE e.`id` IS NULL ORDER BY m.`nombre`;",
+      "latency_ms": 3014,
+      "variant": "qlora"
+    },
+    {
+      "case": "dificil",
+      "sql": "SELECT m.`nombre`, ROUND(SUM(e.total), 2) AS total FROM clientes AS m JOIN pedidos AS e ON e.cliente_id = m.id WHERE e.`estado` = 'completado' AND e.`fecha` >= '2024-01-01' AND e.`fecha` <= '2024-12-31' GROUP BY m.`id`, m.`nombre` ORDER BY total DESC LIMIT 1;",
+      "latency_ms": 8030,
+      "variant": "qlora"
+    }
+  ],
+  "stopped_at_utc": "2026-11-05T22:17:26.6008599Z"
+}

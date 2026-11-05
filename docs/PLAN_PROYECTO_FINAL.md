@@ -23,27 +23,24 @@ versión lista para exposición debe quedar cerrada el 9 de noviembre de 2026.
 | 2 nov | Leer enunciado, auditar P3 y definir arquitectura | Matriz completa de requisitos |
 | 3 nov | Migración curada, procedencia y aplicación base | Suite CPU sin regresiones |
 | 4 nov | UI Gradio, seguridad, errores y telemetría | Flujo local con runtime falso y real |
-| 5 nov | Preparar Space y dependencias compatibles | Build remoto completado |
-| 6 nov | Despliegue y pruebas externas | URL pública + tres casos + logs |
-| 7 nov | README, diagrama, capturas y bitácora | Siete secciones y ejecución reproducible |
-| 8 nov | Adaptar HTML y exportar PDF | Presentación de 9 diapositivas, 10 minutos |
+| 5 nov | Despliegue y pruebas | URL pública + tres casos + capturas + cierre |
+| 5 nov | README, arquitectura y evidencias | Siete secciones y ejecución reproducible |
+| 5 nov | Adaptar HTML y exportar PDF | Presentación de 10 diapositivas, 10 minutos |
 | 9 nov | Ensayo y release candidata | Demo desde otro dispositivo y plan B |
 | 10–12 nov | Correcciones de evidencia y claridad | No introducir cambios experimentales |
 | 13 nov | Segunda fecha posible de presentación | Mismo release probado |
 | 14–15 nov | Auditoría final y entrega | Último commit antes de las 23:59 |
 
-## Responsabilidades provisionales
+## Responsabilidades de cierre
 
 | Área | Responsable principal | Revisión |
 |---|---|---|
-| Datos, hashes y procedencia | Wilson Alejandro Calderón Argueta | Pablo Daniel Barillas Moreno |
-| Runtime, UI y despliegue | Pablo Daniel Barillas Moreno | Wilson Alejandro Calderón Argueta |
-| Pruebas, evidencia y monitoreo | Ambos | Ambos |
-| README y arquitectura | Ambos | Ambos |
-| Presentación y preguntas | Ambos | Ambos |
+| Implementación, despliegue y documentación | Pablo Daniel Barillas Moreno | Auditoría independiente |
+| Auditoría final en Markdown | Wilson Alejandro Calderón Argueta y su agente | Sin editar artefactos |
+| Presentación oral | Ambos | Ambos |
 
-El enunciado indica modalidad de tríos. Esta tabla debe actualizarse si se confirma un tercer
-integrante; no se asignará trabajo ficticio.
+El enunciado general indica modalidad de tríos, pero el Proyecto 3 identifica únicamente a estos dos
+integrantes. No se asignó trabajo ficticio a una tercera persona.
 
 ## Evidencia mínima antes del congelamiento
 
@@ -71,6 +68,6 @@ integrante; no se asignará trabajo ficticio.
 
 ## Criterio de terminado
 
-El proyecto está terminado cuando el repositorio es reproducible, la URL pública funciona, todas
-las evidencias son reales y fechadas, el README cubre las siete secciones, la presentación dura
-como máximo diez minutos y cada integrante puede explicar cualquier decisión.
+El proyecto cumplió el criterio técnico el 5 de noviembre: repositorio reproducible, URL pública
+verificada, evidencias reales y fechadas, README con siete secciones, presentación de diez minutos y
+procedimiento de demostración reproducible. Solo queda la auditoría independiente de Wilson en MD.

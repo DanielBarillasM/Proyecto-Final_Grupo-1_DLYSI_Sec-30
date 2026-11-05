@@ -14,12 +14,13 @@ def test_preparation_artifacts_are_complete() -> None:
     assert checks["adapter_is_pinned"]
     assert checks["adapter_is_enabled"]
     assert checks["presentation_is_pdf"]
+    assert checks["report_is_pdf"]
 
 
-def test_public_evidence_remains_pending_until_real_deployment() -> None:
+def test_public_evidence_is_recorded_after_real_deployment() -> None:
     checks = collect_checks(ROOT)
-    assert not checks["deployment_recorded"]
-    assert not checks["screenshots_recorded"]
+    assert checks["deployment_recorded"]
+    assert checks["screenshots_recorded"]
     assert checks["logs_recorded"]
     assert checks["smoke_tests_recorded"]
 

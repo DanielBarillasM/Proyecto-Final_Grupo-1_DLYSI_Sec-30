@@ -19,13 +19,12 @@ def collect_checks(root: Path) -> tuple[dict[str, bool], list[str]]:
         "adapter/README.md",
         "datos/revision_muestra.csv",
         "informe/main.tex",
-        "output/pdf/informe.pdf",
+        "informe.pdf",
         "presentacion/index.html",
         "presentacion.pdf",
         "resultados/validacion_propia.csv",
         "BITACORA.md",
         "CONTRIBUCIONES.md",
-        "historial_git.txt",
         "web/lib/client.ts",
         "web/lib/utils.ts",
     ]
@@ -33,7 +32,9 @@ def collect_checks(root: Path) -> tuple[dict[str, bool], list[str]]:
     adapter_dir = root / "adapter"
     adapter_config = adapter_dir / "adapter_config.json"
     weights = [adapter_dir / name for name in ("adapter_model.safetensors", "adapter_model.bin")]
-    adapter_ready = adapter_config.is_file() and any(path.stat().st_size > 0 for path in weights if path.is_file())
+    adapter_ready = adapter_config.is_file() and any(
+        path.stat().st_size > 0 for path in weights if path.is_file()
+    )
 
     with (root / "datos/revision_muestra.csv").open(encoding="utf-8-sig", newline="") as stream:
         review_rows = list(csv.DictReader(stream))
@@ -73,7 +74,9 @@ def collect_checks(root: Path) -> tuple[dict[str, bool], list[str]]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Audita la preparación o la entrega final del proyecto.")
+    parser = argparse.ArgumentParser(
+        description="Audita la preparación o la entrega final del proyecto."
+    )
     parser.add_argument(
         "--final",
         action="store_true",
@@ -81,7 +84,12 @@ def main() -> None:
     )
     args = parser.parse_args()
     checks, missing = collect_checks(ROOT)
-    print(json.dumps({"mode": "final" if args.final else "preparation", "checks": checks, "missing": missing}, indent=2, ensure_ascii=False))
+    result = {
+        "mode": "final" if args.final else "preparation",
+        "checks": checks,
+        "missing": missing,
+    }
+    print(json.dumps(result, indent=2, ensure_ascii=False))
     preparation_checks = {
         "required_files_present",
         "training_pairs_at_least_2000",

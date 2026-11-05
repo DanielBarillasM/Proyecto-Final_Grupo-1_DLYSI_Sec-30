@@ -16,8 +16,11 @@ REQUIRED_FILES = (
     "docs/ARQUITECTURA.md",
     "docs/PROCEDENCIA.md",
     "informe/main.tex",
+    "informe.pdf",
     "presentacion/index.html",
     "presentacion.pdf",
+    "docs/Proyecto_Final_Modelo_en_Produccion.pdf",
+    "docs/AUDITORIA_FINAL_REQUISITOS.md",
     "resultados/dataset_manifest.json",
     "resultados/resumen.json",
     "adapter/registry.json",
@@ -52,6 +55,7 @@ def collect_checks(root: Path = ROOT) -> dict[str, bool]:
     )
     registry = json.loads((root / "adapter" / "registry.json").read_text(encoding="utf-8"))
     presentation = root / "presentacion.pdf"
+    report = root / "informe.pdf"
     deployment = root / "docs" / "evidencias" / "despliegue.md"
     deployment_text = deployment.read_text(encoding="utf-8") if deployment.is_file() else ""
 
@@ -75,6 +79,11 @@ def collect_checks(root: Path = ROOT) -> dict[str, bool]:
             presentation.is_file()
             and presentation.stat().st_size > 10_000
             and presentation.read_bytes()[:4] == b"%PDF"
+        ),
+        "report_is_pdf": (
+            report.is_file()
+            and report.stat().st_size > 10_000
+            and report.read_bytes()[:4] == b"%PDF"
         ),
         "deployment_recorded": bool(
             re.search(r"https://", deployment_text)
@@ -112,6 +121,7 @@ def main() -> None:
         "adapter_is_pinned",
         "adapter_is_enabled",
         "presentation_is_pdf",
+        "report_is_pdf",
     }
     handoff = set(checks) - {"deployment_recorded", "screenshots_recorded"}
     required = set(checks) if args.final else handoff if args.handoff else preparation

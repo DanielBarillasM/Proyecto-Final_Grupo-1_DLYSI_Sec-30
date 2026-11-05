@@ -17,7 +17,7 @@
 | Rutas web generadas | `/`, `/datos`, `/experimentos`, `/metodologia` y proxy dinámico |
 | `scripts/build_space_bundle.py` | 16 archivos generados |
 | `scripts/audit_final.py --handoff` | Aprobado |
-| `scripts/audit_final.py --final` | Pendiente solo de URL/capturas y registro externo |
+| `scripts/audit_final.py --final` | Aprobado después de registrar URL, capturas, PDF del informe y evidencia externa |
 
 La verificación no abrió una URL pública ni fabricó evidencia de producción. El resultado final se
 completa únicamente después de ejecutar la demostración desde otra sesión.
