@@ -17,7 +17,7 @@ if ([string]::IsNullOrWhiteSpace($PublicUrl)) { $PublicUrl = $state.public_url }
 $checks = [ordered]@{}
 $health = Invoke-RestMethod -Uri "http://127.0.0.1:8000/health" -TimeoutSec 10
 $checks.backend_health = $health
-$local = Invoke-WebRequest -Uri "http://127.0.0.1:7860" -UseBasicParsing -TimeoutSec 10
+$local = Invoke-WebRequest -Uri $state.local_url -UseBasicParsing -TimeoutSec 10
 $checks.local_http_status = $local.StatusCode
 if (-not [string]::IsNullOrWhiteSpace($PublicUrl)) {
     $public = Invoke-WebRequest -Uri $PublicUrl -UseBasicParsing -TimeoutSec 30

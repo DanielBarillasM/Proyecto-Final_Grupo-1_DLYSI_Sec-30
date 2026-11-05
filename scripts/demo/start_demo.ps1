@@ -74,8 +74,8 @@ $frontend = $null
 $frontendServer = $null
 $tunnel = $null
 $savedMode = $env:TEXT_TO_SQL_MODE
-$savedBackend = $env:TEXT_TO_SQL_BACKEND_URL
-$savedShare = $env:GRADIO_SHARE
+$savedNextPublicApi = $env:NEXT_PUBLIC_API_URL
+$savedProxyBackend = $env:BACKEND_URL
 try {
     $env:TEXT_TO_SQL_MODE = "model"
     $backend = Start-Process -FilePath $resolvedPython `
@@ -85,42 +85,30 @@ try {
         -RedirectStandardError (Join-Path $RunDirectory "backend.stderr.log")
     Wait-HttpOk -Uri "http://127.0.0.1:8000/health"
 
-    $env:TEXT_TO_SQL_BACKEND_URL = "http://127.0.0.1:8000"
-    $env:GRADIO_SHARE = "false"
-    try {
-        & $resolvedPython -c "import gradio" 2>$null
-        $hasGradio = $LASTEXITCODE -eq 0
+    $webDirectory = Join-Path $RepoRoot "web"
+    $pnpm = Get-Command pnpm.cmd -ErrorAction SilentlyContinue
+    $next = Join-Path $webDirectory "node_modules\.bin\next.cmd"
+    if (-not $pnpm -or -not (Test-Path -LiteralPath $next -PathType Leaf)) {
+        throw "Faltan dependencias web. Ejecuta pnpm.cmd --dir web install --frozen-lockfile."
     }
-    catch {
-        $hasGradio = $false
-    }
-    if ($hasGradio) {
-        $frontendExecutable = $resolvedPython
-        $frontendArguments = @("app.py")
-    }
-    else {
-        $uv = Get-Command uv -ErrorAction SilentlyContinue
-        if (-not $uv) {
-            throw "El entorno GPU no contiene Gradio y uv no está disponible para aislar la interfaz."
-        }
-        $frontendExecutable = $uv.Source
-        $frontendArguments = @(
-            "run", "--no-project", "--with", "gradio>=6,<7", "python", "app.py"
-        )
-    }
-    $frontend = Start-Process -FilePath $frontendExecutable -ArgumentList $frontendArguments `
-        -WorkingDirectory $RepoRoot -WindowStyle Hidden -PassThru `
+    $env:NEXT_PUBLIC_API_URL = "/backend-api"
+    $env:BACKEND_URL = "http://127.0.0.1:8000"
+    & $pnpm.Source --dir $webDirectory build
+    if ($LASTEXITCODE -ne 0) { throw "El build de Next.js falló." }
+    $frontend = Start-Process -FilePath $next `
+        -ArgumentList @("start", "-H", "127.0.0.1", "-p", "3000") `
+        -WorkingDirectory $webDirectory -WindowStyle Hidden -PassThru `
         -RedirectStandardOutput (Join-Path $RunDirectory "frontend.stdout.log") `
         -RedirectStandardError (Join-Path $RunDirectory "frontend.stderr.log")
-    Wait-HttpOk -Uri "http://127.0.0.1:7860" -TimeoutSeconds 300
-    $frontendConnection = Get-NetTCPConnection -State Listen -LocalPort 7860 |
+    Wait-HttpOk -Uri "http://127.0.0.1:3000" -TimeoutSeconds 120
+    $frontendConnection = Get-NetTCPConnection -State Listen -LocalPort 3000 |
         Select-Object -First 1
     $frontendServer = Get-Process -Id $frontendConnection.OwningProcess
 
     $publicUrl = $null
     if (-not $LocalOnly) {
         $tunnel = Start-Process -FilePath $CloudflaredPath `
-            -ArgumentList @("tunnel", "--url", "http://127.0.0.1:7860", "--no-autoupdate") `
+            -ArgumentList @("tunnel", "--url", "http://127.0.0.1:3000", "--no-autoupdate") `
             -WorkingDirectory $RepoRoot -WindowStyle Hidden -PassThru `
             -RedirectStandardOutput (Join-Path $RunDirectory "tunnel.stdout.log") `
             -RedirectStandardError (Join-Path $RunDirectory "tunnel.stderr.log")
@@ -154,7 +142,7 @@ try {
         repo_root = $RepoRoot
         commit = $commit
         started_at_utc = (Get-Date).ToUniversalTime().ToString("o")
-        local_url = "http://127.0.0.1:7860"
+        local_url = "http://127.0.0.1:3000"
         backend_url = "http://127.0.0.1:8000"
         public_url = $publicUrl
         processes = $processes
@@ -162,7 +150,7 @@ try {
     }
     $state | ConvertTo-Json -Depth 5 | Set-Content -Encoding utf8 -LiteralPath $StatePath
     Write-Host "Demostración lista."
-    Write-Host "Local:  http://127.0.0.1:7860"
+    Write-Host "Local:  http://127.0.0.1:3000"
     if ($publicUrl) { Write-Host "Pública: $publicUrl" }
     Write-Host "Estado: $StatePath"
 }
@@ -174,6 +162,6 @@ catch {
 }
 finally {
     $env:TEXT_TO_SQL_MODE = $savedMode
-    $env:TEXT_TO_SQL_BACKEND_URL = $savedBackend
-    $env:GRADIO_SHARE = $savedShare
+    $env:NEXT_PUBLIC_API_URL = $savedNextPublicApi
+    $env:BACKEND_URL = $savedProxyBackend
 }

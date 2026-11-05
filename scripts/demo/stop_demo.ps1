@@ -31,10 +31,10 @@ $state.stopped_at_utc = (Get-Date).ToUniversalTime().ToString("o")
 $state | ConvertTo-Json -Depth 5 | Set-Content -Encoding utf8 -LiteralPath $StatePath
 
 $activePorts = Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue |
-    Where-Object { $_.LocalPort -in 7860, 8000 }
+    Where-Object { $_.LocalPort -in 3000, 7860, 8000 }
 if ($activePorts) {
-    Write-Warning "Los puertos 7860 u 8000 siguen ocupados por procesos ajenos al estado registrado."
+    Write-Warning "Los puertos 3000, 7860 u 8000 siguen ocupados por procesos ajenos al estado registrado."
 }
 else {
-    Write-Host "Demostración cerrada; los puertos 7860 y 8000 están libres."
+    Write-Host "Demostración cerrada; los puertos 3000, 7860 y 8000 están libres."
 }
