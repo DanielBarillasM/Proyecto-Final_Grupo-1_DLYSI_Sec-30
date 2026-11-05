@@ -30,6 +30,9 @@ Los procesos se abren sin ventanas adicionales. El estado, los PID y los logs te
 en `.demo-run/`, que Git ignora. El script de cierre solo detiene procesos cuyo PID, nombre y hora de
 inicio coinciden con el estado registrado.
 
+Si el entorno GPU no contiene Gradio, el lanzador usa `uv` para crear una interfaz aislada. El
+backend conserva el entorno CUDA original y no se alteran sus dependencias.
+
 Para probar sin publicar una URL:
 
 ```powershell

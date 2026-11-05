@@ -71,6 +71,7 @@ if (Test-Path -LiteralPath $StatePath) {
 
 $backend = $null
 $frontend = $null
+$frontendServer = $null
 $tunnel = $null
 $savedMode = $env:TEXT_TO_SQL_MODE
 $savedBackend = $env:TEXT_TO_SQL_BACKEND_URL
@@ -86,11 +87,29 @@ try {
 
     $env:TEXT_TO_SQL_BACKEND_URL = "http://127.0.0.1:8000"
     $env:GRADIO_SHARE = "false"
-    $frontend = Start-Process -FilePath $resolvedPython -ArgumentList @("app.py") `
+    & $resolvedPython -c "import gradio" 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        $frontendExecutable = $resolvedPython
+        $frontendArguments = @("app.py")
+    }
+    else {
+        $uv = Get-Command uv -ErrorAction SilentlyContinue
+        if (-not $uv) {
+            throw "El entorno GPU no contiene Gradio y uv no está disponible para aislar la interfaz."
+        }
+        $frontendExecutable = $uv.Source
+        $frontendArguments = @(
+            "run", "--no-project", "--with", "gradio>=6,<7", "python", "app.py"
+        )
+    }
+    $frontend = Start-Process -FilePath $frontendExecutable -ArgumentList $frontendArguments `
         -WorkingDirectory $RepoRoot -WindowStyle Hidden -PassThru `
         -RedirectStandardOutput (Join-Path $RunDirectory "frontend.stdout.log") `
         -RedirectStandardError (Join-Path $RunDirectory "frontend.stderr.log")
     Wait-HttpOk -Uri "http://127.0.0.1:7860"
+    $frontendConnection = Get-NetTCPConnection -State Listen -LocalPort 7860 |
+        Select-Object -First 1
+    $frontendServer = Get-Process -Id $frontendConnection.OwningProcess
 
     $publicUrl = $null
     if (-not $LocalOnly) {
@@ -116,11 +135,15 @@ try {
     }
 
     $commit = (& git -C $RepoRoot rev-parse HEAD).Trim()
-    $processes = @(
-        [ordered]@{ role = "tunnel"; pid = if ($tunnel) { $tunnel.Id } else { $null }; name = if ($tunnel) { $tunnel.ProcessName } else { $null }; started_utc = if ($tunnel) { $tunnel.StartTime.ToUniversalTime().ToString("o") } else { $null } },
-        [ordered]@{ role = "frontend"; pid = $frontend.Id; name = $frontend.ProcessName; started_utc = $frontend.StartTime.ToUniversalTime().ToString("o") },
-        [ordered]@{ role = "backend"; pid = $backend.Id; name = $backend.ProcessName; started_utc = $backend.StartTime.ToUniversalTime().ToString("o") }
-    )
+    $processes = @()
+    if ($tunnel) {
+        $processes += [ordered]@{ role = "tunnel"; pid = $tunnel.Id; name = $tunnel.ProcessName; started_utc = $tunnel.StartTime.ToUniversalTime().ToString("o") }
+    }
+    $processes += [ordered]@{ role = "frontend_server"; pid = $frontendServer.Id; name = $frontendServer.ProcessName; started_utc = $frontendServer.StartTime.ToUniversalTime().ToString("o") }
+    if ($frontend.Id -ne $frontendServer.Id) {
+        $processes += [ordered]@{ role = "frontend_launcher"; pid = $frontend.Id; name = $frontend.ProcessName; started_utc = $frontend.StartTime.ToUniversalTime().ToString("o") }
+    }
+    $processes += [ordered]@{ role = "backend"; pid = $backend.Id; name = $backend.ProcessName; started_utc = $backend.StartTime.ToUniversalTime().ToString("o") }
     $state = [ordered]@{
         repo_root = $RepoRoot
         commit = $commit
