@@ -87,8 +87,14 @@ try {
 
     $env:TEXT_TO_SQL_BACKEND_URL = "http://127.0.0.1:8000"
     $env:GRADIO_SHARE = "false"
-    & $resolvedPython -c "import gradio" 2>$null
-    if ($LASTEXITCODE -eq 0) {
+    try {
+        & $resolvedPython -c "import gradio" 2>$null
+        $hasGradio = $LASTEXITCODE -eq 0
+    }
+    catch {
+        $hasGradio = $false
+    }
+    if ($hasGradio) {
         $frontendExecutable = $resolvedPython
         $frontendArguments = @("app.py")
     }
