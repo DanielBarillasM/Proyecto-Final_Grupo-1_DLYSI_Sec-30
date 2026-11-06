@@ -218,6 +218,9 @@ node_modules/
 /logs/
 .demo-run/
 /docs/HANDOFF_WILSON.md
+/docs/GUIA_EJECUCION_Y_ENTREGA.md
+/docs/guion_presentacion.tex
+/docs/guion_presentacion.pdf
 adapter/*.safetensors
 dist/
 tmp/

@@ -26,13 +26,25 @@
 }
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{.7em}
-\setlist[itemize]{leftmargin=1.4em,itemsep=.2em,topsep=.2em}
-\setlist[enumerate]{leftmargin=1.6em,itemsep=.2em,topsep=.2em}
+\setlist[itemize]{leftmargin=1.4em,itemsep=.25em,topsep=.25em}
+\setlist[enumerate]{leftmargin=1.6em,itemsep=.25em,topsep=.25em}
 \newcommand{\code}[1]{\texttt{#1}}
-\newcommand{\repo}{\code{Proyecto-Final\_Grupo-1\_DLYSI\_Sec-30}}
+\makeatletter
+\renewcommand{\@seccntformat}[1]{\csname the#1\endcsname.\hspace{.75em}}
+\renewcommand{\l@section}{\@dottedtocline{1}{0em}{2.8em}}
+\renewcommand{\l@subsection}{\@dottedtocline{2}{1.8em}{3.4em}}
+\makeatother
 \newtcolorbox{resultado}[1]{
   colback=paper,
   colframe=teal,
+  boxrule=.7pt,
+  arc=1mm,
+  title=\textbf{#1},
+  coltitle=white
+}
+\newtcolorbox{advertencia}[1]{
+  colback=white,
+  colframe=rust,
   boxrule=.7pt,
   arc=1mm,
   title=\textbf{#1},
@@ -59,7 +71,8 @@ UNIVERSIDAD DEL VALLE DE GUATEMALA & SECCIÓN 30
 \begin{resultado}{Objetivo}
 Poner en producción el modelo desarrollado en el Proyecto 3 para que una persona externa pueda
 usarlo mediante una aplicación web. La adaptación conserva los datos, el modelo y las métricas,
-y añade validación de entradas, guardia SQL, telemetría privada y evidencia operativa.
+y añade validación de entradas, guardia SQL, telemetría privada, despliegue reproducible y evidencia
+operativa verificable.
 \end{resultado}
 
 \vfill
@@ -83,30 +96,80 @@ Deep Learning y Sistemas Inteligentes\\
 
 \section{Resumen ejecutivo}
 
-El sistema recibe el DDL de un esquema y una pregunta en español, y devuelve una única consulta
-MySQL de solo lectura. El modelo base es Qwen2.5-Coder-1.5B-Instruct con un adaptador QLoRA
-\code{r=32}. En la validación heredada del Proyecto 3 alcanzó 97.4\% de exactitud ponderada por
-ejecución, frente a 3.8\% del modelo base.
+Este proyecto convierte un prototipo académico de Text-to-SQL en un servicio demostrable por una
+persona ajena al equipo. El sistema recibe el DDL de un esquema relacional y una pregunta en español,
+y devuelve una única consulta MySQL de solo lectura. La propuesta no intenta reemplazar al analista
+ni ejecutar cambios sobre una base de datos: reduce la barrera de escribir SQL y mantiene una revisión
+humana antes de cualquier ejecución.
 
-El Proyecto Final no presenta un modelo nuevo ni repite el entrenamiento. El trabajo se concentra
-en la ruta de producción: interfaz pública, recuperación reproducible del adaptador, límites de
-entrada, rechazo de SQL destructivo, control de concurrencia y telemetría sin guardar contenido. El
-5 de noviembre de 2026 la aplicación respondió HTTP 200 mediante un túnel temporal, produjo tres
-consultas correctas y cerró todos sus procesos después de reunir la evidencia.
+El modelo base es \code{Qwen2.5-Coder-1.5B-Instruct} y la adaptación seleccionada es QLoRA
+\code{r=32}. En la validación heredada del Proyecto 3 obtuvo 97.4\% de exactitud ponderada por
+ejecución y 97.5\% de consultas ejecutables, frente a 3.8\% y 62.5\% del modelo base. Las dos
+configuraciones QLoRA empataron en calidad; \code{r=32} se eligió por su menor latencia p95.
 
-\section{Problemática}
+El aporte del Proyecto Final está en la ingeniería de producción. Se implementaron una interfaz
+Next.js, una API FastAPI, recuperación reproducible del adaptador, límites de entrada, validación de
+SQL, control de concurrencia, telemetría sin contenido de usuario y scripts para abrir, verificar y
+cerrar una demostración pública. La ruta pública temporal usa Cloudflare Quick Tunnel y conserva el
+modelo en una RTX 4050 local.
 
-El usuario objetivo conoce el negocio y la estructura de sus datos, pero no necesariamente domina
-SQL. Hoy depende de un especialista para convertir cada pregunta operativa en una consulta. El
-modelo apoya la decisión de qué consulta de lectura utilizar para obtener la información solicitada.
+El 5 de noviembre de 2026 la aplicación respondió HTTP 200 desde una sesión pública, generó tres
+consultas sintéticas correctas y rechazó dos casos destructivos con HTTP 422. Después de capturar la
+evidencia, el túnel y los procesos fueron cerrados y se verificó que los puertos quedaran libres. La
+entrega se complementa con 43 pruebas automatizadas, análisis estático, compilación de la aplicación
+web, hashes de datos y modelo, capturas, registros anonimizados y un paquete mínimo para un futuro
+Hugging Face Space.
+
+\begin{resultado}{Resultado principal}
+El proyecto demuestra que el modelo puede mantenerse para consultas supervisadas siempre que se
+conserven cuatro condiciones: salida de solo lectura, revisión humana, telemetría privada y monitoreo
+de errores, latencia y cambios de dominio.
+\end{resultado}
+
+\section{Problemática y alcance de la decisión}
+
+\subsection{Situación actual}
+
+Una persona que conoce el negocio y la estructura de sus datos no necesariamente domina SQL. Para
+responder una pregunta operativa suele describir la necesidad a un especialista, esperar que este
+interprete el esquema, escriba la consulta y devuelva el resultado. Esta dependencia incrementa el
+tiempo de respuesta incluso cuando la pregunta solo requiere una consulta de lectura.
+
+El sistema reduce esa fricción: el usuario proporciona el esquema en DDL y formula la pregunta en
+español. El modelo propone SQL que puede revisarse, copiarse y validarse. La decisión apoyada no es
+``qué acción debe ejecutar la organización'', sino ``qué consulta de lectura representa mejor la
+pregunta planteada sobre este esquema''.
+
+\subsection{Usuario y flujo esperado}
+
+El usuario objetivo es un analista, encargado operativo o desarrollador con autorización para
+consultar datos, conocimiento de las entidades del negocio y capacidad de revisar la consulta antes
+de ejecutarla. El flujo previsto es:
+
+\begin{enumerate}
+  \item pegar un esquema MySQL que contenga las tablas y relaciones relevantes;
+  \item escribir una pregunta concreta en español;
+  \item solicitar una generación y esperar la respuesta del modelo;
+  \item revisar tablas, filtros, agregaciones, uniones y límites;
+  \item ejecutar la consulta únicamente en un entorno con permisos apropiados.
+\end{enumerate}
 
 \begin{resultado}{Alcance operativo}
 La aplicación propone SQL para revisión. No solicita credenciales, no se conecta a una base de
-negocio y no ejecuta cambios. Una consulta segura todavía puede ser semánticamente incorrecta, por
-lo que el usuario debe revisarla antes de ejecutarla.
+negocio y no ejecuta cambios. Una consulta sintácticamente segura todavía puede ser semánticamente
+incorrecta, por lo que el usuario debe revisarla antes de ejecutarla.
 \end{resultado}
 
-\section{Planificación}
+\subsection{Casos incluidos y exclusiones}
+
+El alcance incluye selección, filtros, ordenamiento, agregaciones, uniones y expresiones comunes de
+MySQL. La demostración cubre una pregunta fácil, una media y una difícil sobre un esquema sintético
+de clientes y pedidos. Quedan fuera la ejecución directa, las credenciales, los datos personales,
+las operaciones DDL o DML, las múltiples sentencias y la automatización de decisiones de negocio.
+
+\section{Planificación y gobierno del trabajo}
+
+\subsection{Etapas y puertas de calidad}
 
 \begin{tabularx}{\textwidth}{@{}lXX@{}}
 \toprule
@@ -115,159 +178,527 @@ lo que el usuario debe revisarla antes de ejecutarla.
 2--3 nov & Migración y trazabilidad & Código, datos y hashes verificados\\
 4 nov & Aplicación y controles & Flujo local, guardia SQL y telemetría\\
 5 nov & Despliegue & HTTP 200 público, tres casos y cierre verificado\\
-5 nov & Evidencias y documentación & README con siete secciones y capturas\\
-5 nov & Presentación & PDF de diez diapositivas y ensayo\\
+5 nov & Evidencias y documentación & README, registros, capturas y pruebas\\
+5 nov & Presentación e informe & PDF de diez diapositivas e informe compilado\\
 9 nov & Congelamiento & Release candidata y contingencia local\\
 10--15 nov & Ajustes & Correcciones sin alterar el experimento\\
 \bottomrule
 \end{tabularx}
 
-Pablo mantiene el runtime, la interfaz, el despliegue, las pruebas y la documentación. Wilson y su
-agente realizan una auditoría independiente cuyo único producto es \code{AUDITORIA\_WILSON.md}.
-Ambos integrantes preparan la exposición oral. El repositorio heredado identifica dos integrantes;
-no se añadió una tercera persona ficticia.
+La planificación separó el trabajo heredado del Proyecto 3 de las tareas nuevas de producción. Las
+métricas y los datos no se regeneraron; primero se verificó su procedencia y luego se construyeron el
+servicio, los controles y la evidencia. Esta separación evita presentar como nueva una mejora que no
+fue entrenada durante el Proyecto Final.
 
-\section{Supuestos}
+\subsection{Responsabilidades y control de cambios}
+
+Pablo mantiene el runtime, la interfaz, el despliegue, las pruebas y la documentación. Wilson realiza
+una auditoría independiente y ambos integrantes preparan la exposición oral. Los cambios se publican
+en commits pequeños, mientras que los pesos, cachés, entornos virtuales, logs privados y archivos
+temporales permanecen fuera de Git.
+
+El repositorio heredado identifica dos integrantes. El enunciado general menciona modalidad de
+tríos, pero no se añadió una tercera persona ficticia ni se le atribuyó trabajo. Esta diferencia debe
+confirmarse administrativamente con el docente y no altera el contenido técnico del proyecto.
+
+\subsection{Riesgos del plan}
+
+\begin{tabularx}{\textwidth}{@{}XX@{}}
+\toprule
+\textbf{Riesgo} & \textbf{Mitigación}\\
+\midrule
+Descarga lenta del modelo & Revisiones inmutables, caché local y calentamiento antes de exponer\\
+Falta de GPU pública & Demostración en RTX 4050 y paquete preparado para ZeroGPU\\
+SQL destructivo & Análisis de sentencia única y lista de operaciones permitidas\\
+Fuga de información & Logs sin pregunta, DDL, credenciales ni datos personales\\
+Servicio inaccesible & Capturas, evidencia estructurada y modo local como contingencia\\
+Cambio de dominio & Uso supervisado y seguimiento de errores por dominio\\
+\bottomrule
+\end{tabularx}
+
+\section{Supuestos y criterios de uso}
+
+\subsection{Supuestos de entrada}
 
 \begin{itemize}
   \item El usuario proporciona un DDL con al menos una sentencia \code{CREATE TABLE}.
   \item La pregunta está en español y se refiere a entidades presentes en el esquema.
   \item El dialecto objetivo es MySQL 8.4 y la salida debe ser una sola consulta de lectura.
-  \item La demostración usa una RTX 4050 local; la primera solicitud incluye la carga del modelo.
-  \item El servicio procesa una generación a la vez para proteger el runtime.
+  \item El esquema tiene información suficiente sobre claves, columnas y relaciones relevantes.
+  \item El usuario puede reconocer si la consulta propuesta responde su intención.
+\end{itemize}
+
+\subsection{Supuestos de operación}
+
+\begin{itemize}
+  \item La demostración usa una RTX 4050 local con un entorno CUDA compatible.
+  \item La primera solicitud incluye la carga del modelo y puede ser notablemente más lenta.
+  \item El servicio procesa una generación a la vez para proteger memoria y estado del runtime.
+  \item La URL de Quick Tunnel es temporal y cambia cada vez que se inicia la demostración.
   \item Los datos sintéticos y dos esquemas inéditos no representan todos los dominios reales.
 \end{itemize}
 
-\section{Modelo planteado}
+\begin{advertencia}{Interpretación correcta de la seguridad}
+``Solo lectura'' significa que la guardia no permite una operación de escritura. No significa que la
+consulta sea necesariamente correcta, eficiente o autorizada para todos los usuarios. La revisión
+humana y los permisos de la base siguen siendo controles obligatorios.
+\end{advertencia}
 
-El proyecto parte del commit
-\code{df34c14c5afecddaa0d977832a56cec80c590244} del Proyecto 3. El modelo base y el adaptador
-se fijan mediante revisiones inmutables en \code{config.json}. El adaptador público es
-\url{https://huggingface.co/Dani0604/proyecto3-text2sql-qlora}.
+\section{Procedencia y gobierno de datos}
 
-La adaptación de producción introduce los siguientes cambios:
+\subsection{Proyecto de origen}
 
-\begin{itemize}
-  \item descarga del adaptador desde Hugging Face cuando no existen pesos locales;
-  \item interfaz Next.js publicada mediante Cloudflare y Gradio preparado para Spaces;
-  \item validación de longitudes y presencia de \code{CREATE TABLE};
-  \item guardia que acepta únicamente \code{SELECT} o \code{WITH ... SELECT};
-  \item respuesta con latencia, variante e identificador de solicitud;
-  \item telemetría que omite el esquema y la pregunta.
-\end{itemize}
+La base técnica proviene del Proyecto 3 en el commit
+\code{df34c14c5afecddaa0d977832a56cec80c590244}. La migración excluyó el historial Git original,
+entornos virtuales, cachés, builds y temporales, pero conservó los datos, resultados, configuración,
+scripts relevantes, machotes y evidencia experimental.
 
-\section{Validación de hipótesis}
-
-Antes del entrenamiento se definieron dos criterios: EX ponderada de al menos 0.70 y una mejora
-absoluta de al menos 0.15 frente al baseline.
+\subsection{Dataset congelado}
 
 \begin{center}
-\begin{tabular}{@{}lrrr@{}}
+\begin{tabular}{@{}lr@{}}
 \toprule
-\textbf{Variante} & \textbf{EX ponderada} & \textbf{Ejecutable} & \textbf{p95}\\
+\textbf{Elemento} & \textbf{Cantidad}\\
 \midrule
-Qwen base & 3.8\% & 62.5\% & 6.66 s\\
-QLoRA $r=16$ & 97.4\% & 97.5\% & 15.72 s\\
-\textbf{QLoRA $r=32$} & \textbf{97.4\%} & \textbf{97.5\%} & \textbf{13.20 s}\\
+Pares de entrenamiento & 2,592\\
+Esquemas de entrenamiento & 12\\
+Preguntas de validación & 40\\
+Esquemas inéditos de validación & 2\\
+Preguntas fáciles / medias / difíciles & 14 / 14 / 12\\
+Filas descartadas & 0\\
+Filas con revisión humana & 100\\
 \bottomrule
 \end{tabular}
 \end{center}
 
-La hipótesis de que \code{r=32} mejoraría la exactitud frente a \code{r=16} no se confirmó. Ambos
-obtuvieron 39 de 40 respuestas correctas. Se eligió \code{r=32} por menor latencia p95 después del
-empate. Frente al baseline, el adaptador sí superó ampliamente los criterios de éxito.
+La validación se ejecutó en MySQL 8.4.10 con modo estricto. Los conteos y hashes se conservan en
+\code{resultados/dataset\_manifest.json}. El SHA-256 del conjunto de entrenamiento comienza con
+\code{9e28bcd7} y el de validación con \code{e1af4f01}. Congelar estos valores permite distinguir
+una corrección de ingeniería de una alteración del experimento.
+
+\subsection{Regla de trazabilidad}
+
+Cada afirmación tiene una fuente definida: los datos se rastrean a \code{datos/}, las métricas a
+\code{resultados/}, las revisiones del modelo a \code{config.json} y \code{adapter/registry.json}, y
+los hechos de producción a \code{docs/evidencias/}. Ninguna URL, captura o latencia se presenta como
+real si no fue producida por el servicio ejecutado.
+
+\section{Modelo planteado}
+
+\subsection{Modelo base y adaptación QLoRA}
+
+El modelo base es \code{Qwen/Qwen2.5-Coder-1.5B-Instruct}, fijado a la revisión
+\code{2e1fd397...f1098a}. Se escogió por estar orientado a código, tener un tamaño manejable para una
+GPU portátil y permitir adaptación eficiente mediante PEFT.
+
+QLoRA conserva el modelo cuantizado y entrena matrices de bajo rango en módulos seleccionados. Esto
+reduce el costo de ajuste respecto de entrenar todos los parámetros. Se compararon dos rangos:
+\code{r=16}, con 18,464,768 parámetros entrenables, y \code{r=32}, con 36,929,536. Sus tiempos de
+entrenamiento fueron aproximadamente 120.7 y 133.4 minutos, respectivamente.
+
+El adaptador seleccionado se publica en el
+\href{https://huggingface.co/Dani0604/proyecto3-text2sql-qlora}{repositorio público de Hugging Face}
+y se fija a la revisión
+\code{24658a4e...6de84}. El peso \code{adapter\_model.safetensors} mide aproximadamente 140.9 MB y
+su SHA-256 comienza con \code{d3126183}. El repositorio no duplica este binario: el runtime lo
+descarga y verifica, o utiliza una copia local coincidente.
+
+\subsection{Flujo de inferencia}
+
+\begin{enumerate}
+  \item se normalizan y validan el esquema y la pregunta;
+  \item el prompt combina instrucciones, DDL y lenguaje natural;
+  \item el runtime carga el modelo base y aplica el adaptador fijado;
+  \item la generación produce un candidato de SQL de forma determinista;
+  \item la salida se limpia y analiza con \code{sqlglot};
+  \item si es una única consulta de lectura, se devuelve junto con metadatos técnicos;
+  \item si viola el contrato, se genera un error visible y categorizado.
+\end{enumerate}
+
+La ruta experimental también evaluó una reparación única ante error SQL. La exactitud ponderada fue
+97.4\% tanto en modo directo como con reparación, por lo que la producción no depende de una mejora
+no observada.
+
+\subsection{Cambios introducidos para producción}
+
+\begin{itemize}
+  \item descarga reproducible del adaptador cuando no existen pesos locales;
+  \item interfaz Next.js y alternativa Gradio empaquetada para Spaces;
+  \item API con validación de campos, longitudes y presencia de \code{CREATE TABLE};
+  \item guardia que acepta únicamente \code{SELECT} o \code{WITH ... SELECT};
+  \item respuesta con latencia, variante e identificador de solicitud;
+  \item telemetría que omite el esquema y la pregunta;
+  \item scripts de apertura, verificación y cierre seguro de la demostración.
+\end{itemize}
+
+\section{Validación de hipótesis}
+
+\subsection{Hipótesis y criterios previos}
+
+Antes del entrenamiento se definieron dos criterios de éxito principales: exactitud ponderada por
+ejecución de al menos 0.70 y mejora absoluta de al menos 0.15 frente al baseline. Además se esperaba
+que \code{r=32} mejorara la exactitud de \code{r=16}; si existía empate, la decisión usaría
+ejecutabilidad y latencia p95.
+
+La métrica EX compara el resultado de ejecutar la consulta generada con el resultado de referencia.
+La versión ponderada evita que el promedio oculte la distribución de dificultad. La tasa ejecutable
+mide si MySQL acepta la consulta, pero por sí sola no comprueba que responda correctamente.
+
+\begin{center}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+\textbf{Variante} & \textbf{EX ponderada} & \textbf{Ejecutable} & \textbf{p95} & \textbf{Entrenamiento}\\
+\midrule
+Qwen base & 3.8\% & 62.5\% & 6.66 s & --\\
+QLoRA $r=16$ & 97.4\% & 97.5\% & 15.72 s & 120.7 min\\
+\textbf{QLoRA $r=32$} & \textbf{97.4\%} & \textbf{97.5\%} & \textbf{13.20 s} & \textbf{133.4 min}\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Interpretación del resultado}
+
+La hipótesis de superioridad en exactitud para \code{r=32} no se confirmó: ambas configuraciones
+obtuvieron 39 respuestas correctas de 40. Sin embargo, las dos superaron ampliamente el umbral de
+0.70 y la mejora mínima frente al baseline. Después del empate se seleccionó \code{r=32} porque su
+latencia p95 fue aproximadamente 2.5 segundos menor.
+
+El baseline produjo respuestas más rápidas, pero su 3.8\% de EX ponderada demuestra que velocidad
+sin calidad no satisface la decisión. La tasa ejecutable de 62.5\% también indica que una parte
+considerable de sus salidas ni siquiera podía ejecutarse. En contraste, QLoRA combina alta calidad
+y 97.5\% de ejecutabilidad con un costo de latencia aceptable para uso supervisado.
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=.82\textwidth]{../resultados/curvas_loss.png}
+\includegraphics[width=.88\textwidth]{../resultados/curvas_loss.png}
 \caption{Pérdida de entrenamiento y validación de las dos configuraciones QLoRA. La selección final
-se basa en ejecución y latencia, no únicamente en esta curva.}
+se basa en ejecución y latencia, no únicamente en la curva de pérdida.}
 \end{figure}
 
+Las curvas confirman convergencia, pero no justifican por sí solas la selección. El criterio
+operativo se apoya en consultas ejecutadas sobre esquemas inéditos, porque el objetivo final es
+producir SQL útil y no solo minimizar una pérdida de entrenamiento.
+
 \clearpage
-\section{Herramientas y arquitectura}
+\section{Herramientas y arquitectura de producción}
 
-\begin{enumerate}
-  \item Cloudflare reenvía la URL temporal a Next.js en \code{127.0.0.1:3000}.
-  \item Next.js usa un proxy restringido hacia FastAPI en \code{127.0.0.1:8000}.
-  \item La API valida estructura y tamaño antes de solicitar inferencia.
-  \item PyTorch, Transformers y PEFT cargan Qwen y QLoRA desde revisiones fijadas.
-  \item \code{sqlglot} normaliza la salida y rechaza escritura o sentencias múltiples.
-  \item Un log JSONL guarda fecha UTC, estado, latencia, tamaños y categoría de error.
-\end{enumerate}
+\subsection{Vista por capas}
 
-FastAPI y Next.js forman la ruta pública temporal verificada. Gradio se conserva en el bundle mínimo
-generado por \code{scripts/build\_space\_bundle.py} para un futuro Space ZeroGPU. La cuenta de
-Hugging Face todavía no cumple la antigüedad mínima, por lo que no se simuló un despliegue permanente.
+\begin{center}
+\begin{tabular}{c}
+\fcolorbox{teal}{paper}{\parbox{.82\textwidth}{\centering
+\textbf{Navegador externo}\\Formulario, ejemplo sintético y revisión de SQL}}\\[.35em]
+$\downarrow$ Cloudflare Quick Tunnel\\[.35em]
+\fcolorbox{teal}{paper}{\parbox{.82\textwidth}{\centering
+\textbf{Next.js en 127.0.0.1:3000}\\Interfaz, rutas informativas y proxy restringido}}\\[.35em]
+$\downarrow$ petición permitida\\[.35em]
+\fcolorbox{teal}{paper}{\parbox{.82\textwidth}{\centering
+\textbf{FastAPI en 127.0.0.1:8000}\\Contrato, control de cola y manejo de errores}}\\[.35em]
+$\downarrow$ entrada válida\\[.35em]
+\fcolorbox{teal}{paper}{\parbox{.82\textwidth}{\centering
+\textbf{Qwen 1.5B + QLoRA r=32}\\Inferencia local con revisiones fijadas}}\\[.35em]
+$\downarrow$ candidato de SQL\\[.35em]
+\fcolorbox{teal}{paper}{\parbox{.82\textwidth}{\centering
+\textbf{Guardia SQL y respuesta}\\Sentencia única de lectura, latencia y request ID}}
+\end{tabular}
+\end{center}
 
-\subsection{Decisiones de despliegue}
+\subsection{Responsabilidad de cada componente}
 
-\begin{tabularx}{\textwidth}{@{}XXX@{}}
+\begin{tabularx}{\textwidth}{@{}lXX@{}}
 \toprule
-\textbf{Decisión} & \textbf{Razón} & \textbf{Consecuencia}\\
+\textbf{Capa} & \textbf{Herramientas} & \textbf{Responsabilidad}\\
 \midrule
-Next.js + Cloudflare & UI validada y túnel sin alterar el entorno CUDA & URL temporal por ejecución\\
-Gradio para Spaces & Bundle compatible con ZeroGPU & Espera elegibilidad de la cuenta\\
-Adapter remoto fijado & Evita duplicar un binario de 140.9 MB & Primera carga depende del Hub\\
-Concurrencia uno & Protege memoria y estado del modelo & Menor capacidad simultánea\\
-Logs sin contenido & Reduce exposición de esquemas & Diagnóstico mediante metadatos\\
+Datos & JSONL, MySQL 8.4 & Pares congelados, validación ejecutable y hashes\\
+Modelo & PyTorch, Transformers, PEFT & Carga del modelo, adaptador e inferencia\\
+API & FastAPI, Pydantic & Contrato, límites, errores y control de concurrencia\\
+Seguridad & sqlglot & Parseo, sentencia única y solo lectura\\
+Interfaz & Next.js & Formulario, páginas técnicas y proxy al backend\\
+Acceso & Cloudflare & URL HTTPS temporal sin exponer FastAPI directamente\\
+Observabilidad & JSON Lines & Estado, latencia, tamaños y categoría de error\\
+Calidad & pytest, Ruff, TypeScript & Contratos, regresiones y compilación\\
 \bottomrule
 \end{tabularx}
 
+\subsection{Secuencia de una solicitud}
+
+Cloudflare recibe la conexión pública y la dirige al frontend, que solo publica rutas esperadas. El
+proxy de Next.js reenvía la generación a FastAPI. La API valida la estructura antes de adquirir el
+runtime de GPU. Después de inferir, la guardia SQL analiza el candidato y solo devuelve una consulta
+de lectura. El evento técnico registra el desenlace sin copiar el contenido proporcionado por el
+usuario.
+
+Esta separación permite diagnosticar si un fallo pertenece a la interfaz, al contrato, a la carga
+del modelo o a la salida SQL. También evita publicar el puerto del backend y concentra la interacción
+externa en una única puerta HTTPS.
+
+\section{Seguridad, privacidad y observabilidad}
+
+\subsection{Modelo de amenazas}
+
+\begin{tabularx}{\textwidth}{@{}XXX@{}}
+\toprule
+\textbf{Riesgo} & \textbf{Control} & \textbf{Evidencia}\\
+\midrule
+SQL destructivo & Rechazo de DDL, DML y múltiples sentencias & Pruebas y HTTP 422\\
+Entrada fuera de contrato & Límites y presencia de \code{CREATE TABLE} & Pruebas de API\\
+Fuga en logs & No guardar DDL ni pregunta & Evento anonimizado\\
+Exposición del backend & Escucha solo en \code{127.0.0.1} & Scripts y puertos verificados\\
+Saturación de GPU & Una generación simultánea & Bloqueo del runtime\\
+Pesos alterados & Revisión y SHA-256 fijados & Registro del adaptador\\
+Código remoto & \code{trust\_remote\_code=False} y safetensors & Configuración del runtime\\
+\bottomrule
+\end{tabularx}
+
+\subsection{Guardia de salida}
+
+La validación no depende únicamente de buscar palabras prohibidas. \code{sqlglot} analiza la
+estructura, normaliza el SQL y comprueba que exista una sola sentencia cuyo árbol corresponda a
+lectura. Se aceptan \code{SELECT} y expresiones \code{WITH ... SELECT}; se rechazan \code{DELETE},
+\code{UPDATE}, \code{INSERT}, \code{DROP}, \code{ALTER}, \code{CREATE} y combinaciones múltiples.
+
+La aplicación no ejecuta el SQL contra una base pública. Esta decisión reduce el impacto de una
+salida incorrecta y permite que el usuario revise el texto antes de copiarlo a un entorno autorizado.
+
+\subsection{Telemetría privada}
+
+Cada evento incluye fecha UTC, \code{request\_id}, estado, categoría de error, latencia, longitud del
+esquema, longitud de la pregunta y variante del modelo. No incluye el DDL, la pregunta, credenciales
+ni resultados de negocio. Los identificadores relacionan una captura y un caso de prueba sin revelar
+contenido sensible.
+
+\begin{advertencia}{Límite de observabilidad}
+Omitir contenido protege la privacidad, pero reduce el detalle disponible para diagnosticar errores
+semánticos. En una operación real se necesitaría un proceso voluntario y controlado para que el
+usuario reporte ejemplos problemáticos sin convertir el log técnico en un almacén de datos.
+\end{advertencia}
+
+\section{Decisiones de despliegue}
+
+\subsection{Alternativas evaluadas}
+
+\begin{tabularx}{\textwidth}{@{}lcccX@{}}
+\toprule
+\textbf{Alternativa} & \textbf{Costo} & \textbf{GPU} & \textbf{Estable} & \textbf{Decisión}\\
+\midrule
+Hugging Face ZeroGPU & Gratis & Sí & Sí & Bloqueado por antigüedad de cuenta\\
+Hugging Face PRO & USD 9/mes & Sí & Sí & Requiere autorización de pago\\
+Gradio compartido & Gratis & Local & No & Interferido por inspección HTTPS\\
+Cloudflare Quick Tunnel & Gratis & Local & No & Seleccionado y verificado\\
+GPU serverless & Variable & Sí & Sí & Requiere método de pago\\
+\bottomrule
+\end{tabularx}
+
+El intento de crear un Space ZeroGPU recibió HTTP 402 porque la cuenta tenía menos de 30 días. No
+se subieron archivos ni se simuló un despliegue permanente. Gradio \code{share=True} también se
+descartó tras fallos asociados con la inspección HTTPS local. No se agregó una exclusión a Kaspersky.
+
+Cloudflare permitió reutilizar la interfaz Next.js y la RTX 4050 sin alterar el entorno CUDA. El
+frontend escucha en \code{127.0.0.1:3000}; FastAPI permanece en \code{127.0.0.1:8000} y nunca se
+publica directamente. La consecuencia aceptada es que la URL cambia y solo existe mientras el equipo
+mantiene la demostración activa.
+
+\subsection{Ruta permanente preparada}
+
+\code{scripts/build\_space\_bundle.py} genera un paquete de 16 archivos para Gradio y Hugging Face
+Spaces. El bundle incluye runtime, interfaz, configuración, metadatos del adaptador y dependencias;
+excluye pesos, datasets, notebooks, logs, capturas, secretos y entornos virtuales. Cuando la cuenta
+sea elegible para ZeroGPU, este paquete ofrece una ruta estable sin modificar el experimento.
+
 \section{Evidencias del pase a producción}
+
+\subsection{Prueba pública del 5 de noviembre}
+
+La demostración publicó el commit \code{0e304a20f41ed216ae66bc4e535d4a75366cf3a8} mediante
+Next.js 16.4.3, FastAPI y Cloudflare Quick Tunnel 2026.10.7. La página respondió HTTP 200 y el backend
+reportó modo \code{model}, variante QLoRA y adaptador local listo.
+
+\begin{tabularx}{\textwidth}{@{}lXr@{}}
+\toprule
+\textbf{Caso} & \textbf{Resultado observado} & \textbf{Latencia}\\
+\midrule
+Fácil & Lista nombre y ciudad de clientes ordenados & 43,039 ms\\
+Medio & Clientes sin pedidos mediante anti-join & 3,014 ms\\
+Difícil & Cliente con mayor total completado en 2024 & 8,030 ms\\
+\code{DELETE} & Rechazado por la API con HTTP 422 & --\\
+Sentencia múltiple & Rechazada por la API con HTTP 422 & --\\
+\bottomrule
+\end{tabularx}
+
+La primera latencia incluye la carga fría del modelo; los siguientes casos representan un runtime
+caliente. La diferencia muestra por qué la exposición debe iniciar el servicio con anticipación y no
+interpretar los 43 segundos como el tiempo normal de todas las solicitudes.
+
+\subsection{Capturas y cierre controlado}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=.92\textwidth]{../docs/evidencias/capturas/interfaz_conectada_local_2026-11-05.png}
+\caption{Interfaz conectada al backend en modo modelo, con QLoRA activo y adaptador local.}
+\end{figure}
+
+La URL \url{https://bytes-aside-abraham-troy.trycloudflare.com} fue válida únicamente durante la
+ventana documentada de 16:13:10 a 16:17:26, hora de Guatemala. Al finalizar se detuvieron el túnel,
+Next.js y FastAPI; luego se confirmó que los puertos 3000, 7860, 8000 y 20241 estaban libres. Por
+ello, un error \code{DNS\_PROBE\_FINISHED\_NXDOMAIN} posterior es el comportamiento esperado de una
+URL temporal cerrada.
+
+\clearpage
+\subsection{Inventario de evidencia}
 
 \begin{tabularx}{\textwidth}{@{}XXl@{}}
 \toprule
 \textbf{Evidencia} & \textbf{Ubicación} & \textbf{Estado}\\
 \midrule
-Suite automatizada & \code{tests/} & 43 pruebas aprobadas\\
+Suite automatizada & \code{tests/} & 43 aprobadas\\
 Smoke local RTX 4050 & \code{docs/evidencias/pruebas/} & 65.1 s, 1,472 MB\\
 Evento anonimizado & \code{docs/evidencias/logs/} & Registrado\\
-Aplicación pública & \code{docs/evidencias/despliegue.md} & HTTP 200 verificado\\
-Capturas & \code{docs/evidencias/capturas/} & Dos imágenes revisadas\\
+Aplicación pública & \code{docs/evidencias/despliegue.md} & HTTP 200\\
+Capturas & \code{docs/evidencias/capturas/} & Dos revisadas\\
 Resultados sintéticos & \code{docs/evidencias/pruebas/} & 3 de 3 correctos\\
 Controles destructivos & \code{docs/evidencias/pruebas/} & 2 de 2 rechazados\\
-Commit desplegado & \code{docs/evidencias/despliegue.md} & \code{0e304a20...66cf3a8}\\
 \bottomrule
 \end{tabularx}
 
-La URL temporal \url{https://bytes-aside-abraham-troy.trycloudflare.com} respondió HTTP 200. El caso
-fácil tardó 43.039 s con carga fría; los casos medio y difícil tardaron 3.014 s y 8.030 s. La API
-rechazó \code{DELETE} y una sentencia múltiple con HTTP 422. El túnel operó de 16:13 a 16:17, hora
-de Guatemala, y luego se verificó que los puertos de la demostración quedaran libres.
+\section{Verificación y reproducibilidad}
 
-\section{Reproducibilidad y procedencia}
+\subsection{Batería de calidad}
 
-El dataset conserva 2,592 pares sobre 12 esquemas de entrenamiento y 40 preguntas sobre dos
-esquemas inéditos. Los hashes se mantienen en \code{resultados/dataset\_manifest.json}. El adapter
-ganador conserva el SHA-256
-\code{d3126183a092521cb1feffb9424b188552d27bb8fc4b51a8d13a1348d89016f1}.
+\begin{tabularx}{\textwidth}{@{}XXl@{}}
+\toprule
+\textbf{Control} & \textbf{Cobertura} & \textbf{Resultado}\\
+\midrule
+pytest & API, seguridad, configuración, datos, bundle y auditorías & 43/43\\
+Ruff & Runtime, backend, pruebas y scripts finales & Sin errores\\
+Next.js build & TypeScript, rutas estáticas y proxy dinámico & Aprobado\\
+Bundle de Space & Lista permitida de archivos & 16 archivos\\
+Auditor final & Requisitos, PDFs, evidencia y scripts & Aprobado\\
+Revisión visual & Informe, presentación y capturas & Aprobada\\
+\bottomrule
+\end{tabularx}
 
-La suite se ejecuta con:
+La suite incluye contratos de entrada y salida, rechazo de SQL inseguro, configuración fijada,
+integridad del dataset, selección del adaptador, importación de scripts, construcción del bundle y
+presencia de artefactos finales. Las pruebas no sustituyen la inferencia real; por eso se complementan
+con el smoke test de GPU y la prueba pública.
+
+\subsection{Preparación desde una clonación limpia}
+
+\begin{verbatim}
+py -3.11 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements-demo.txt
+pnpm.cmd --dir web install --frozen-lockfile
+\end{verbatim}
+
+Para iniciar, verificar y cerrar la demostración:
+
+\begin{verbatim}
+.\scripts\demo\start_demo.ps1
+.\scripts\demo\verify_demo.ps1 -RunInference
+.\scripts\demo\stop_demo.ps1
+\end{verbatim}
+
+El primer comando construye Next.js, inicia FastAPI y genera una URL nueva. El segundo comprueba
+HTTP, inferencias y rechazos. El tercero detiene únicamente los procesos cuyos identificadores,
+nombres y horas de inicio coinciden con el estado de \code{.demo-run/}. Para una prueba sin URL
+pública puede usarse \code{-LocalOnly}.
+
+\subsection{Comandos de auditoría}
 
 \begin{verbatim}
 python -m pytest -q
-python -m ruff check production.py app.py text2sql tests
+python -m ruff check production.py app.py backend text2sql tests
 pnpm.cmd --dir web build
 python scripts/build_space_bundle.py
+python scripts/audit_delivery.py --final
 python scripts/audit_final.py --final
 \end{verbatim}
 
-\section{Limitaciones y recomendación}
+El modelo base, la revisión, el adaptador, la semilla y la habilitación de QLoRA se fijan en
+\code{config.json}. Los pesos recuperables no se incluyen en Git, pero su origen, revisión y hash sí.
+Esta combinación permite reconstruir el servicio sin depender de una copia opaca en la computadora
+del equipo.
 
-El principal riesgo es el cambio de dominio. La validación cubre dos esquemas inéditos, pero no la
-diversidad de una organización real. El hardware bajo demanda también puede introducir cola. La
-recomendación es mantener el modelo para consultas supervisadas, conservar la restricción de solo
-lectura, exigir revisión humana y monitorear latencia, errores y dominios nuevos.
+\section{Limitaciones, operación y trabajo futuro}
+
+\subsection{Limitaciones conocidas}
+
+\begin{itemize}
+  \item La validación propia contiene 40 preguntas sobre únicamente dos esquemas inéditos.
+  \item Los datos son sintéticos y no representan todos los patrones de una organización real.
+  \item El sistema no ejecuta la consulta ni valida permisos sobre una base de negocio.
+  \item Una consulta segura puede ser semánticamente incorrecta o ineficiente.
+  \item La GPU local limita la concurrencia y exige que la computadora anfitriona permanezca activa.
+  \item Quick Tunnel produce una URL temporal y no constituye disponibilidad permanente.
+  \item La omisión de contenido en logs limita el diagnóstico de errores semánticos.
+\end{itemize}
+
+\subsection{Condiciones para mantenerlo en producción}
+
+La recomendación al comité es mantener el modelo para consultas supervisadas, no como ejecutor
+autónomo. La continuidad se condiciona a conservar la restricción de solo lectura, exigir revisión
+antes de ejecutar, monitorear latencia y errores, y evaluar por separado cualquier dominio nuevo.
+
+En una operación más amplia se deberían definir un catálogo de dominios aceptados, límites de
+servicio, política de retención de telemetría, evaluación periódica, revisión de dependencias y un
+proceso de rollback para el adaptador. También conviene desplegar el bundle en una GPU estable cuando
+la cuenta sea elegible, repetir las 40 consultas en ese entorno y comparar latencia y calidad con la
+evidencia local.
+
+\subsection{Próximos pasos priorizados}
+
+\begin{enumerate}
+  \item obtener una URL permanente con GPU compatible;
+  \item ejecutar una evaluación por cada dominio real autorizado;
+  \item agregar métricas agregadas de error y latencia sin registrar contenido;
+  \item definir objetivos de disponibilidad y tiempos de respuesta;
+  \item documentar revisión, aprobación y ejecución segura del SQL generado;
+  \item repetir pruebas de seguridad y dependencias antes de cada release.
+\end{enumerate}
+
+\section{Conclusiones}
+
+El proyecto cumplió el objetivo de llevar a producción un modelo existente sin presentar como nueva
+la experimentación del Proyecto 3. La adaptación QLoRA conserva su 97.4\% de EX ponderada y se
+integra en una ruta completa: interfaz, API, GPU, validación de salida, telemetría y evidencia.
+
+La prueba pública demostró accesibilidad externa, inferencia real y rechazo de casos destructivos.
+La reproducibilidad se sostiene con revisiones y hashes fijados, scripts de demostración, pruebas
+automatizadas, documentación y un paquete mínimo de despliegue. La URL histórica no permanece
+activa por diseño; cada demostración genera una nueva y la cierra al terminar.
+
+La decisión recomendada es mantener el modelo bajo supervisión humana. La calidad observada justifica
+seguir utilizándolo, pero la cobertura limitada, el cambio de dominio y la posibilidad de errores
+semánticos impiden tratarlo como un sistema autónomo. El valor del proyecto está precisamente en
+combinar la capacidad del modelo con controles explícitos y evidencia auditable.
 
 \section*{Uso de inteligencia artificial}
-
-\enlargethispage{3\baselineskip}
+\addcontentsline{toc}{section}{Uso de inteligencia artificial}
 
 OpenAI Codex apoyó el análisis del enunciado, la migración, la implementación, las pruebas y la
 documentación. v0 se utilizó como punto de partida visual de la interfaz del Proyecto 3. Los
-integrantes revisan los cambios y son responsables de explicar el código y las decisiones. Ninguna
-API externa procesa las solicitudes del servicio; la inferencia utiliza el modelo y el adaptador
-abiertos descritos en este documento.
+integrantes revisan los cambios y son responsables de explicar el código, las métricas y las
+decisiones. Ninguna API externa procesa las solicitudes del servicio; la inferencia utiliza el
+modelo y el adaptador abiertos descritos en este documento.
+
+\section*{Mapa de artefactos}
+\addcontentsline{toc}{section}{Mapa de artefactos}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Ruta} & \textbf{Propósito}\\
+\midrule
+\code{README.md} & Documento técnico principal y guía de ejecución\\
+\code{config.json} & Revisiones, adaptador y semilla\\
+\code{production.py} & Puerta de producción y telemetría\\
+\code{backend/} & API, contrato y servicio de inferencia\\
+\code{web/} & Interfaz Next.js y proxy\\
+\code{text2sql/} & Prompt, runtime, evaluación y seguridad SQL\\
+\code{resultados/} & Métricas, corridas, manifiestos y hashes\\
+\code{docs/evidencias/} & Capturas, logs y verificaciones fechadas\\
+\code{scripts/demo/} & Inicio, verificación y cierre reproducibles\\
+\code{tests/} & Suite automatizada de 43 pruebas\\
+\bottomrule
+\end{tabularx}
 
 \end{document}

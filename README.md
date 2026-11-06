@@ -10,10 +10,6 @@ y añade una interfaz pública, controles de entrada, telemetría y evidencia op
   <code>MySQL 8.4</code> · <code>Gradio</code> · <code>FastAPI</code> · <code>Next.js</code>
 </div>
 
-> **Estado al 5 de noviembre de 2026:** entrega técnica completa. La aplicación pública temporal,
-> tres inferencias reales, los controles de seguridad y el cierre del túnel quedaron documentados.
-> Wilson y su agente solo realizarán una auditoría independiente en Markdown, sin editar el proyecto.
-
 ## Vista rápida
 
 | Datos congelados | Calidad | Servicio | Verificación local |

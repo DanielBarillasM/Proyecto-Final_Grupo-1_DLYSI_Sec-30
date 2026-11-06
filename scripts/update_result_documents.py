@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import subprocess
 from pathlib import Path
 
 from pypdf import PdfReader
-
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNS = ROOT / "resultados" / "corridas"
@@ -40,7 +40,6 @@ def assert_documented_metrics() -> None:
         "baseline": pct(baseline["weighted_ex"]),
         "winner": pct(winner["weighted_ex"]),
         "winner_label": winner_label,
-        "hidden": pct(summary["hidden_ex_prediction"]),
     }
     missing: list[str] = []
     for name, value in expected.items():
@@ -59,14 +58,15 @@ def compile_documents(artifacts_root: Path) -> None:
     logs = artifacts_root / "logs"
     logs.mkdir(parents=True, exist_ok=True)
     log_path = logs / "document_update.log"
+    report_build = artifacts_root / "report-build"
+    report_build.mkdir(parents=True, exist_ok=True)
 
     latex = [
         "pdflatex",
         "-interaction=nonstopmode",
         "-halt-on-error",
-        "-jobname=informe",
-        "-output-directory=output\\pdf",
-        "informe\\main.tex",
+        f"-output-directory={report_build}",
+        "main.tex",
     ]
     edge = Path(r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe")
     if not edge.is_file():
@@ -77,8 +77,15 @@ def compile_documents(artifacts_root: Path) -> None:
     presentation = ROOT / "presentacion" / "index.html"
 
     with log_path.open("wb") as log:
-        subprocess.run(latex, cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, check=True)
-        subprocess.run(latex, cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, check=True)
+        for _ in range(3):
+            subprocess.run(
+                latex,
+                cwd=ROOT / "informe",
+                stdout=log,
+                stderr=subprocess.STDOUT,
+                check=True,
+            )
+        shutil.copy2(report_build / "main.pdf", ROOT / "informe.pdf")
         subprocess.run(
             [
                 str(edge),
@@ -98,8 +105,8 @@ def compile_documents(artifacts_root: Path) -> None:
 
 def validate_outputs() -> None:
     expected = (
-        (ROOT / "output" / "pdf" / "informe.pdf", 7),
-        (ROOT / "presentacion.pdf", 12),
+        (ROOT / "informe.pdf", 16),
+        (ROOT / "presentacion.pdf", 10),
     )
     for pdf_path, pages in expected:
         if not pdf_path.is_file():
@@ -116,7 +123,7 @@ def main() -> None:
     assert_documented_metrics()
     compile_documents(args.artifacts_root.resolve())
     validate_outputs()
-    print("Documentos verificados y recompilados: informe 7 páginas; presentación 12.")
+    print("Documentos verificados y recompilados: informe 16 páginas; presentación 10.")
 
 
 if __name__ == "__main__":

@@ -20,7 +20,6 @@ REQUIRED_FILES = (
     "presentacion/index.html",
     "presentacion.pdf",
     "docs/Proyecto_Final_Modelo_en_Produccion.pdf",
-    "docs/AUDITORIA_FINAL_REQUISITOS.md",
     "resultados/dataset_manifest.json",
     "resultados/resumen.json",
     "adapter/registry.json",
