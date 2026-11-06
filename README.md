@@ -167,13 +167,49 @@ URL fue temporal y se cerró después de la prueba, como exige el procedimiento 
 
 ## Ejecución
 
-### Pruebas rápidas sin cargar el modelo
+### Preparación reproducible en Windows
+
+Los comandos siguientes se ejecutan en PowerShell desde la raíz del repositorio. Python 3.11 es la
+versión recomendada; el proyecto admite Python 3.10 a 3.12. Primero confirme qué versiones reconoce
+el lanzador de Windows:
+
+```powershell
+py --list-paths
+```
+
+Si Python 3.11 está disponible, prepare el entorno completo:
 
 ```powershell
 py -3.11 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
-.\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\python.exe -m pip install --upgrade pip
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt -r requirements-demo.txt
+pnpm.cmd --dir web install --frozen-lockfile
 ```
+
+Si `py -3.11` informa `No suitable Python runtime found`, instale esa versión con
+`winget install -e --id Python.Python.3.11`, cierre PowerShell, abra una terminal nueva y repita la
+preparación. También puede sustituir `-3.11` por `-3.12` si esa es la versión compatible instalada.
+No ejecute comandos de `.venv` hasta que la creación del entorno termine sin errores.
+
+Antes de iniciar la aplicación, compruebe que la clonación contiene los módulos del cliente web:
+
+```powershell
+Test-Path .\web\lib\client.ts
+Test-Path .\web\lib\utils.ts
+```
+
+Ambos resultados deben ser `True`. Si no lo son, ejecute `git pull --ff-only` y vuelva a comprobar.
+
+### Pruebas rápidas sin cargar el modelo
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+pnpm.cmd --dir web typecheck
+pnpm.cmd --dir web build
+```
+
+El resultado de referencia es 43 pruebas aprobadas, TypeScript sin errores y seis rutas de Next.js
+compiladas.
 
 ### Aplicación Gradio con el modelo real
 
@@ -187,6 +223,28 @@ descarga el modelo base y el adaptador fijado.
 
 Abra `http://127.0.0.1:7860`. La aplicación usa `config.json`; `usar_adapter` debe permanecer en
 `true` para la variante final.
+
+#### Certificados TLS, Kaspersky y descargas
+
+Si `pip` informa `CERTIFICATE_VERIFY_FAILED` o `self-signed certificate in certificate chain`, la
+instalación se interrumpió y módulos posteriores, como Gradio, no se instalaron. Use primero el
+almacén de certificados de Windows:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install --use-feature=truststore --upgrade pip
+.\.venv\Scripts\python.exe -m pip install --use-feature=truststore -r requirements-space.txt
+```
+
+Si Kaspersky continúa interceptando la conexión, agregue temporalmente al análisis web únicamente
+los dominios necesarios: `pypi.org` y `files.pythonhosted.org` para paquetes; `huggingface.co`,
+`cdn-lfs.huggingface.co`, `cas-bridge.xethub.hf.co` y `transfer.xethub.hf.co` para el modelo. No se
+recomienda desactivar toda la protección ni usar `--trusted-host`, porque esa opción omite la
+verificación TLS. Verifique la instalación antes de ejecutar la interfaz:
+
+```powershell
+.\.venv\Scripts\python.exe -c "import gradio, torch; print(gradio.__version__, torch.__version__)"
+.\.venv\Scripts\python.exe -c "import torch; print(torch.cuda.is_available())"
+```
 
 ### Construir el paquete de despliegue
 
@@ -211,6 +269,29 @@ Next.js, FastAPI y Cloudflare con la RTX 4050 local:
 El primer comando imprime una URL `trycloudflare.com` y registra el commit exacto. El segundo valida
 HTTP público, tres inferencias y dos rechazos de seguridad. El tercero detiene únicamente los PID
 registrados y verifica que los puertos queden libres. Solo se permiten esquemas sintéticos.
+
+Para comprobar primero toda la arquitectura sin crear una URL pública:
+
+```powershell
+.\scripts\demo\start_demo.ps1 -LocalOnly
+.\scripts\demo\verify_demo.ps1 -RunInference
+.\scripts\demo\stop_demo.ps1
+```
+
+Una verificación correcta debe mostrar `status: ok`, `mode: model`, `adapter_ready: true`, HTTP 200 y
+dos rechazos HTTP 422. `verify_demo.ps1` confirma que la API responde, que las inferencias terminan y
+que el SQL destructivo se rechaza; no compara automáticamente la semántica de cada consulta contra
+una referencia. Los integrantes deben revisar el SQL generado. Por ejemplo, una pregunta que solicita
+el total acumulado por cliente requiere `SUM(total)`, mientras que `MAX(total)` solo identifica el
+pedido individual más grande.
+
+Si `start_demo.ps1` falla durante el build con `Can't resolve '@/lib/client'`, actualice la clonación
+y confirme los dos archivos de `web/lib/` indicados en la preparación. No ejecute
+`verify_demo.ps1` después de un inicio fallido: ese script necesita el estado creado por un inicio
+exitoso. Al finalizar, ejecute siempre `stop_demo.ps1`, incluso después de una prueba local.
+
+La URL `trycloudflare.com` cambia en cada inicio público. Un
+`DNS_PROBE_FINISHED_NXDOMAIN` sobre una URL histórica es normal una vez cerrado el túnel.
 
 La ejecución verificada produjo 43.0 s en carga fría, 3.0 s en el caso medio y 8.0 s en el difícil.
 La URL histórica y las capturas están en [`docs/evidencias/despliegue.md`](docs/evidencias/despliegue.md).
